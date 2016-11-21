@@ -277,7 +277,7 @@ class Horde_MIME
                 return $addresses;
             }
 
-            $parser = &new Mail_RFC822();
+            $parser = new \Mail_RFC822();
             $addr_arr = $parser->parseAddressList($addresses, $defserver, true, false);
         }
 
@@ -899,7 +899,7 @@ class Horde_MIME
                 break;
         }
 
-        $vars = get_class_vars('Horde_MIME');
+        $vars = get_class_vars('TechData\AS2SecureBundle\Models\Horde\Horde_MIME');
 
         if ($numeric) {
             if (isset($vars[$type][$input])) {

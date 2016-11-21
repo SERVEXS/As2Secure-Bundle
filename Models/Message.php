@@ -30,6 +30,7 @@ namespace TechData\AS2SecureBundle\Models;
  */
 
 use TechData\AS2SecureBundle\Factories\MDN as MDNFactory;
+use TechData\AS2SecureBundle\Models\Horde\MIME\Horde_MIME_Part;
 
 class Message extends AbstractBase
 {
@@ -183,7 +184,7 @@ class Message extends AbstractBase
 
             $file = Adapter::getTempFilename();
             file_put_contents($file, $mime_part->toString());
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             throw $e;
             return false;
         }
@@ -196,9 +197,10 @@ class Message extends AbstractBase
 
                 //echo file_get_contents($file);
                 $this->mic_checksum = $this->getMicChecksum($file);
-            } catch (Exception $e) {
+            } catch (\Exception $e) {
                 throw $e;
                 return false;
+
             }
         }
 
@@ -207,7 +209,7 @@ class Message extends AbstractBase
             try {
                 $file = $this->adapter->encrypt($file);
                 $this->is_crypted = true;
-            } catch (Exception $e) {
+            } catch (\Exception $e) {
                 throw $e;
                 return false;
             }

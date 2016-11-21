@@ -29,9 +29,12 @@ namespace TechData\AS2SecureBundle\Models;
  * @version 0.8.2
  *
  */
+use Symfony\Component\EventDispatcher\EventDispatcher;
+use TechData\AS2SecureBundle\Events\Log;
 use TechData\AS2SecureBundle\Factories\MDN as MDNFactory;
 use TechData\AS2SecureBundle\Factories\Message as MessageFactory;
 use Mail_mimeDecode;
+use TechData\AS2SecureBundle\Models\Horde\MIME\Horde_MIME_Structure;
 
 class Request extends AbstractBase
 {
@@ -46,12 +49,17 @@ class Request extends AbstractBase
      */
     private $messageFactory;
 
-    function __construct(MDNFactory $mdnFactory, MessageFactory $messageFactory)
+    /**
+     * @var EventDispatcher
+     */
+    private $eventDispatcher;
+
+    function __construct(MDNFactory $mdnFactory, MessageFactory $messageFactory, EventDispatcher $eventDispatcher)
     {
         $this->mdnFactory = $mdnFactory;
         $this->messageFactory = $messageFactory;
+        $this->eventDispatcher = $eventDispatcher;
     }
-
 
     public function initialize($content, $headers)
     {
@@ -98,7 +106,7 @@ class Request extends AbstractBase
                 $output = $this->adapter->decrypt($input);
 
                 return $output;
-            } catch (Exception $e) {
+            } catch (\Exception $e) {
                 //
                 throw $e;
             }
@@ -122,7 +130,7 @@ class Request extends AbstractBase
             'input' => false,
             //'crlf'           => "\n"
         );
-        $decoder = new Mail_mimeDecode(file_get_contents($input));
+        $decoder = new \Mail_mimeDecode(file_get_contents($input));
         $structure = $decoder->decode($params);
         $mimetype = $structure->ctype_primary . '/' . $structure->ctype_secondary;
 
@@ -142,10 +150,10 @@ class Request extends AbstractBase
                 $crypted = true;
 
                 // reload extracted content to get mimetype
-                $decoder = new Mail_mimeDecode(file_get_contents($input));
+                $decoder = new \Mail_mimeDecode(file_get_contents($input));
                 $structure = $decoder->decode($params);
                 $mimetype = $structure->ctype_primary . '/' . $structure->ctype_secondary;
-            } catch (Exception $e) {
+            } catch (\Exception $e) {
                 throw new AS2Exception($e->getMessage(), 3);
             }
         }
@@ -166,12 +174,12 @@ class Request extends AbstractBase
                 $this->eventDispatcher->dispatch('log', new Log(Log::TYPE_INFO, 'The sender used the algorithm "' . $structure->ctype_parameters['micalg'] . '" to sign the message.'));
 
                 // reload extracted content to get mimetype
-                $decoder = new Mail_mimeDecode(file_get_contents($input));
+                $decoder = new \Mail_mimeDecode(file_get_contents($input));
                 $structure = $decoder->decode($params);
                 $mimetype = $structure->ctype_primary . '/' . $structure->ctype_secondary;
 
                 $this->eventDispatcher->dispatch('log', new Log(Log::TYPE_INFO, 'Using certificate "' . $this->getPartnerFrom() . '" to verify signature.'));
-            } catch (Exception $e) {
+            } catch (\Exception $e) {
                 throw new AS2Exception($e->getMessage(), 5);
             }
         } else {
@@ -232,7 +240,7 @@ class Request extends AbstractBase
                     $object->setHeaders($this->getHeaders());
                     return $object;
             }
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             throw new AS2Exception($e->getMessage(), 6);
         }
 

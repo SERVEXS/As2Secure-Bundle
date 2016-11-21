@@ -141,6 +141,7 @@ class AS2 implements MessageSender
         $messageSent->setMessage(print_r($result, true));
         $this->eventDispatcher->dispatch(MessageSent::EVENT, $messageSent);
 
+        return $result;
     }
 }
 
