@@ -108,7 +108,7 @@ class Horde_MIME
      *
      * @return boolean  True if it does, false if it doesn't.
      */
-    public function is8bit($string, $charset = null)
+    public static function is8bit($string, $charset = null)
     {
         /* ISO-2022-JP is a 7bit charset, but it is an 8bit representation so
          * it needs to be entirely encoded. */
@@ -127,7 +127,7 @@ class Horde_MIME
      * @return string  The text, encoded only if it contains non-ASCII
      *                 characters.
      */
-    public function encode($text, $charset = null)
+    public static function encode($text, $charset = null)
     {
         if (is_null($charset)) {
             $charset = 'UTF-8';
@@ -172,7 +172,7 @@ class Horde_MIME
      * @return string  The text, encoded only if it contains non-ASCII
      *                 characters.
      */
-    protected function _encode($text, $charset)
+    protected static function _encode($text, $charset)
     {
         $encoded = trim(base64_encode($text));
         $c_size = strlen($charset) + 7;
@@ -207,7 +207,7 @@ class Horde_MIME
      *
      * @return string  The quoted-printable encoded string.
      */
-    public function quotedPrintableEncode($text, $eol)
+    public static function quotedPrintableEncode($text, $eol)
     {
         $line = $output = '';
         $curr_length = 0;
@@ -266,7 +266,7 @@ class Horde_MIME
      * @return string  The text, encoded only if it contains non-ascii
      *                 characters
      */
-    public function encodeAddress($addresses, $charset = null, $defserver = null)
+    public static function encodeAddress($addresses, $charset = null, $defserver = null)
     {
         if (is_array($addresses)) {
             $addr_arr = $addresses;
@@ -315,7 +315,7 @@ class Horde_MIME
      *
      * @return string  The decoded text.
      */
-    public function decode($string, $to_charset = null)
+    public static function decode($string, $to_charset = null)
     {
         if (($pos = strpos($string, '=?')) === false) {
             return $string;
@@ -387,7 +387,7 @@ class Horde_MIME
      *
      * @return string  The decoded text.
      */
-    public function decodeAddrString($string, $to_charset = null)
+    public static function decodeAddrString($string, $to_charset = null)
     {
         $addr_list = array();
         foreach (Horde_MIME::parseAddressList($string) as $ob) {
@@ -408,7 +408,7 @@ class Horde_MIME
      *
      * @return array  The encoded parameter string.
      */
-    public function encodeRFC2231($name, $string, $charset, $lang = null)
+    public static function encodeRFC2231($name, $string, $charset, $lang = null)
     {
         $encode = $wrap = false;
         $output = array();
@@ -462,7 +462,7 @@ class Horde_MIME
      * @return array  The decoded text, or the original string if it was not
      *                encoded.
      */
-    public function decodeRFC2231($string, $to_charset = null)
+    public static function decodeRFC2231($string, $to_charset = null)
     {
         if (($pos = strpos($string, '*')) === false) {
             return false;
