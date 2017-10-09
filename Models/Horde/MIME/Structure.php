@@ -311,7 +311,7 @@ class Horde_MIME_Structure
             'decode_headers' => false
         );
 
-        $mimeDecode = new \Mail_mimeDecode($text, MIME_PART_EOL);
+        $mimeDecode = new \Mail_mimeDecode($text);
         if (!($structure = $mimeDecode->decode($decode_args))) {
             $message = false;
         } else {
