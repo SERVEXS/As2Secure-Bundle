@@ -94,8 +94,11 @@ class AS2 implements MessageSender
         $files = $response_object->getFiles();
         foreach ($files as $file) {
             // We have an incoming message.  Lets fire the event for it.
-            $event = new MessageReceived();
-            $event->setMessage(file_get_contents($file['path']));
+            $event = (new MessageReceived())
+                ->setMessage(file_get_contents($file['path']))
+                ->setSendingPartnerId($partner->id)
+                ->setReceivingPartnerId($as2Response->getPartnerTo()->id);
+
             $this->eventDispatcher->dispatch(MessageReceived::EVENT, $event);
         }
     }
