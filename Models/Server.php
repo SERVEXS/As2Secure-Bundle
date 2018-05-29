@@ -179,12 +179,13 @@ class Server
      */
     protected function saveMessage($content, $headers, $type = 'raw')
     {
+        // @todo: use dedicated event type for incoming messages.
 
-        $message = new MessageSent();
-        $message->setMessage($content);
-        $message->setHeaders($headers);
-        $message->setMessageType($type);
-        $this->eventDispatcher->dispatch('messageSent', $message);
+//        $message = new MessageSent();
+//        $message->setMessage($content);
+//        $message->setHeaders($headers);
+//        $message->setMessageType($type);
+//        $this->eventDispatcher->dispatch('messageSent', $message);
 
     }
 

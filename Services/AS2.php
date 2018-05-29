@@ -4,6 +4,7 @@ namespace TechData\AS2SecureBundle\Services;
 
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\Request;
+use TechData\AS2SecureBundle\Events\MessageBeforeSent;
 use TechData\AS2SecureBundle\Events\MessageReceived;
 use TechData\AS2SecureBundle\Events\MessageSent;
 use TechData\AS2SecureBundle\Factories\Adapter as AdapterFactory;
@@ -138,9 +139,17 @@ class AS2 implements MessageSender
         $message->addFile($tmp_file, 'application/edi-x12');
         $message->encode();
 
+        $this->eventDispatcher->dispatch(MessageBeforeSent::EVENT, new MessageBeforeSent(
+            $messageContent,
+            $message->getMessageId(),
+            $fromPartner,
+            $toPartner
+        ));
+
         // send AS2 message
         $result = $this->client->sendRequest($message);
         $messageSent = new MessageSent();
+        $messageSent->setMessageId($message->getMessageId());
         $messageSent->setMessage(print_r($result, true));
         $this->eventDispatcher->dispatch(MessageSent::EVENT, $messageSent);
 
