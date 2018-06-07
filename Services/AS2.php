@@ -4,10 +4,12 @@ namespace TechData\AS2SecureBundle\Services;
 
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\Request;
-use TechData\AS2SecureBundle\Events\MessageBeforeSent;
+use TechData\AS2SecureBundle\Events\IncomingAs2Request;
 use TechData\AS2SecureBundle\Events\MessageReceived;
 use TechData\AS2SecureBundle\Events\MessageSent;
+use TechData\AS2SecureBundle\Events\OutgoingMessage;
 use TechData\AS2SecureBundle\Factories\Adapter as AdapterFactory;
+use TechData\AS2SecureBundle\Interfaces\Events;
 use TechData\AS2SecureBundle\Models\Client;
 use TechData\AS2SecureBundle\Factories\Message as MessageFactory;
 use TechData\AS2SecureBundle\Factories\Partner as PartnerFactory;
@@ -77,6 +79,10 @@ class AS2 implements MessageSender
         // Convert the symfony request to a as2s request
         $as2Request = $this->requestToAS2Request($request);
 
+        $this->eventDispatcher->dispatch(
+            IncomingAs2Request::EVENT, new IncomingAs2Request($as2Request)
+        );
+
         // Take the request and lets AS2S handle it
         $as2Response = $this->as2Server->handle($as2Request);
 
@@ -139,17 +145,13 @@ class AS2 implements MessageSender
         $message->addFile($tmp_file, 'application/edi-x12');
         $message->encode();
 
-        $this->eventDispatcher->dispatch(MessageBeforeSent::EVENT, new MessageBeforeSent(
-            $messageContent,
-            $message->getMessageId(),
-            $fromPartner,
-            $toPartner
-        ));
+        $this->eventDispatcher->dispatch(
+            OutgoingMessage::EVENT, new OutgoingMessage($message, $messageContent)
+        );
 
         // send AS2 message
         $result = $this->client->sendRequest($message);
         $messageSent = new MessageSent();
-        $messageSent->setMessageId($message->getMessageId());
         $messageSent->setMessage(print_r($result, true));
         $this->eventDispatcher->dispatch(MessageSent::EVENT, $messageSent);
 

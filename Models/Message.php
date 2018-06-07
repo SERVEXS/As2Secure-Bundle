@@ -222,11 +222,11 @@ class Message extends AbstractBase
         else{
             file_put_contents($this->path, $mime_part->toString());
         }*/
-
         // headers setup
+
         $headers = array(
-            'AS2-From' => '"' . $this->getPartnerFrom()->id . '"',
-            'AS2-To' => '"' . $this->getPartnerTo()->id . '"',
+            'AS2-From' => $this->getPartnerFrom()->id,
+            'AS2-To' => $this->getPartnerTo()->id,
             'AS2-Version' => '1.0',
             'From' => $this->getPartnerFrom()->email,
             'Subject' => $this->getPartnerFrom()->send_subject,
@@ -234,7 +234,7 @@ class Message extends AbstractBase
             'Mime-Version' => '1.0',
             'Disposition-Notification-To' => $this->getPartnerFrom()->send_url,
             'Recipient-Address' => $this->getPartnerTo()->send_url,
-            'User-Agent' => 'AS2Secure - PHP Lib for AS2 message encoding / decoding',
+            'User-Agent' => 'SupportPlaza AS2Secure HTTP Client',
         );
 
         if ($this->getPartnerTo()->mdn_signed) {

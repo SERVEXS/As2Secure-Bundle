@@ -15,23 +15,6 @@ class MessageSent extends Event {
     private $message;
     private $messageType;
     private $headers = array();
-    private $messageId;
-
-    /**
-     * @return string
-     */
-    public function getMessageId()
-    {
-        return $this->messageId;
-    }
-
-    /**
-     * @param string $messageId
-     */
-    public function setMessageId($messageId)
-    {
-        $this->messageId = $messageId;
-    }
 
     public function getMessage() {
         return $this->message;
