@@ -102,6 +102,7 @@ class AS2 implements MessageSender
         foreach ($files as $file) {
             // We have an incoming message.  Lets fire the event for it.
             $event = (new MessageReceived())
+                ->setMessageId($as2Request->getMessageId())
                 ->setMessage(file_get_contents($file['path']))
                 ->setSendingPartnerId($partner->id)
                 ->setReceivingPartnerId($as2Response->getPartnerTo()->id);
@@ -114,10 +115,10 @@ class AS2 implements MessageSender
         $flattenedHeaders = array();
         foreach($request->headers as $key => $header) {
             $flattenedHeaders[$key] = reset($header);
-        }        
+        }
         return $this->requestFactory->build($request->getContent(), new Header($flattenedHeaders));
     }
-    
+
     /**
      * @param $toPartner
      * @param $fromPartner

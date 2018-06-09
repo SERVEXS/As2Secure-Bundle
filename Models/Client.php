@@ -78,6 +78,8 @@ class Client
         curl_setopt($ch, CURLOPT_FRESH_CONNECT, 1);
         curl_setopt($ch, CURLOPT_FORBID_REUSE, 1);
         curl_setopt($ch, CURLOPT_POST, 1);
+        curl_setopt($ch, CURLOPT_LOCALPORT, 8130);
+        curl_setopt($ch, CURLOPT_LOCALPORTRANGE, 200);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $request->getContent());
         curl_setopt($ch, CURLOPT_USERAGENT, 'SupportPlaza AS2Secure HTTP Client');
         curl_setopt($ch, CURLOPT_HEADERFUNCTION, array($this, 'handleResponseHeader'));
