@@ -30,6 +30,27 @@ class MessageReceived extends Event {
     private $receivingPartnerId;
 
     /**
+     * @var string
+     */
+    private $messageId;
+
+    /**
+     * @return int
+     */
+    public function getMessageId()
+    {
+        return $this->messageId;
+    }
+
+    /**
+     * @param string $messageId
+     */
+    public function setMessageId($messageId)
+    {
+        $this->messageId = $messageId;
+    }
+
+    /**
      * @return string
      */
     public function getSendingPartnerId(): string
