@@ -40,6 +40,8 @@ class Message extends AbstractBase
      */
     private $mdnFactory;
 
+    private $messageSubject = null;
+
 
     protected $mic_checksum = false;
 
@@ -52,6 +54,10 @@ class Message extends AbstractBase
     public function initialize($data, $params = array())
     {
         $this->initializeBase($data, $params);
+
+        if (isset($params['message_subject'])) {
+            $this->messageSubject = $params['message_subject'];
+        }
 
         if ($data instanceof Request) {
             $this->path = $data->getPath();
@@ -224,12 +230,17 @@ class Message extends AbstractBase
         }*/
         // headers setup
 
+        $messageSubject = $this->messageSubject;
+        if ($messageSubject == null) {
+            $messageSubject = $this->getPartnerFrom()->send_subject;
+        }
+
         $headers = array(
             'AS2-From' => $this->getPartnerFrom()->id,
             'AS2-To' => $this->getPartnerTo()->id,
             'AS2-Version' => '1.0',
             'From' => $this->getPartnerFrom()->email,
-            'Subject' => $this->getPartnerFrom()->send_subject,
+            'Subject' => $messageSubject,
             'Message-ID' => $this->getMessageId(),
             'Mime-Version' => '1.0',
             'Disposition-Notification-To' => $this->getPartnerFrom()->mdn_url,

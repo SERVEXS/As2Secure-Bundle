@@ -123,11 +123,13 @@ class AS2 implements MessageSender
      * @param $toPartner
      * @param $fromPartner
      * @param $messageContent
+     * @param null $messageSubject
+     *
+     * @return array
      * @throws \Exception
      * @throws \TechData\AS2SecureBundle\Models\AS2Exception
-     * @throws \TechData\AS2SecureBundle\Models\Exception
      */
-    public function sendMessage($toPartner, $fromPartner, $messageContent)
+    public function sendMessage($toPartner, $fromPartner, $messageContent, $messageSubject = null)
     {
         // process request to build outbound AS2 message to VAR
 
@@ -135,6 +137,7 @@ class AS2 implements MessageSender
         $message = $this->messageFactory->build(false, array(
             'partner_from' => $fromPartner,
             'partner_to' => $toPartner,
+            'message_subject' => $messageSubject
         ));
 
         // initialize AS2Adapter for public key encryption between StreamOne and the receiving VAR
