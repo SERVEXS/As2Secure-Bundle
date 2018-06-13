@@ -232,7 +232,7 @@ class Message extends AbstractBase
             'Subject' => $this->getPartnerFrom()->send_subject,
             'Message-ID' => $this->getMessageId(),
             'Mime-Version' => '1.0',
-            'Disposition-Notification-To' => $this->getPartnerFrom()->send_url,
+            'Disposition-Notification-To' => $this->getPartnerFrom()->mdn_url,
             'Recipient-Address' => $this->getPartnerTo()->send_url,
             'User-Agent' => 'SupportPlaza AS2Secure HTTP Client',
         );

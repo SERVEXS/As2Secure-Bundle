@@ -44,10 +44,14 @@ class MessageReceived extends Event {
 
     /**
      * @param string $messageId
+     *
+     * @return MessageReceived
      */
     public function setMessageId($messageId)
     {
         $this->messageId = $messageId;
+
+        return $this;
     }
 
     /**
