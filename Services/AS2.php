@@ -124,12 +124,13 @@ class AS2 implements MessageSender
      * @param $fromPartner
      * @param $messageContent
      * @param null $messageSubject
+     * @param null $filename
      *
      * @return array
      * @throws \Exception
      * @throws \TechData\AS2SecureBundle\Models\AS2Exception
      */
-    public function sendMessage($toPartner, $fromPartner, $messageContent, $messageSubject = null)
+    public function sendMessage($toPartner, $fromPartner, $messageContent, $messageSubject = null, $filename = null)
     {
         // process request to build outbound AS2 message to VAR
 
@@ -146,7 +147,7 @@ class AS2 implements MessageSender
         // write the EDI message that will be sent to a temp file, then use the AS2 adapter to encrypt it
         $tmp_file = $adapter->getTempFilename();
         file_put_contents($tmp_file, $messageContent);
-        $message->addFile($tmp_file, 'application/edi-x12');
+        $message->addFile($tmp_file, 'application/edi-x12', $filename);
         $message->encode();
 
         $this->eventDispatcher->dispatch(
