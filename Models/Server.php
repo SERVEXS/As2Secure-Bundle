@@ -79,7 +79,7 @@ class Server
             $error = null;
             $headers = $request->getHeaders();
             $object = $request->getObject();
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             // get error while handling request
             $error = $e;
             //throw $e;
@@ -108,7 +108,7 @@ class Server
                 } else {
                     throw $error;
                 }
-            } catch (Exception $e) {
+            } catch (\Exception $e) {
                 $params = array('partner_from' => $headers->getHeader('as2-from'),
                     'partner_to' => $headers->getHeader('as2-to'));
                 $mdn = $this->mdnFactory->build($e, $params);

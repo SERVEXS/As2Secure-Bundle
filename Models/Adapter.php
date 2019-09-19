@@ -111,7 +111,7 @@ class Adapter
             $dump = self::exec($command, true);
 
             return $dump[0];
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             return false;
         }
     }
@@ -132,8 +132,8 @@ class Adapter
         try {
             exec($command, $output, $return_var);
             $line = (isset($output[0]) ? $output[0] : 'Unexpected error in command line : ' . $command);
-            if ($return_var) throw new Exception($line, (int)$return_var);
-        } catch (Exception $e) {
+            if ($return_var) throw new \Exception($line, (int)$return_var);
+        } catch (\Exception $e) {
             throw $e;
         }
 
@@ -181,7 +181,7 @@ class Adapter
             file_put_contents($output, $certs[$token]);
 
             return $output;
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             throw $e;
         }
     }
@@ -329,13 +329,13 @@ class Adapter
     {
         try {
             $this->partner_from = $this->partnerFactory->getPartner($partner_from);
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             throw new AS2Exception('Sender AS2 id "' . $partner_from . '" is unknown.');
         }
 
         try {
             $this->partner_to = $this->partnerFactory->getPartner($partner_to);
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             throw new AS2Exception('Receiver AS2 id "' . $partner_to . '" is unknown.');
         }
     }
@@ -351,7 +351,7 @@ class Adapter
     {
         try {
             if (!is_array($files) || !count($files))
-                throw new Exception('No file provided.');
+                throw new \Exception('No file provided.');
 
             $args = '';
             foreach ($files as $file) {
@@ -371,7 +371,7 @@ class Adapter
             $result = self::exec($command);
 
             return $output;
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             throw $e;
         }
     }
@@ -414,7 +414,7 @@ class Adapter
             }
 
             return $files;
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             throw $e;
         }
     }
@@ -453,7 +453,7 @@ class Adapter
             $result = self::exec($command);
 
             return $output;
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             throw $e;
         }
     }
@@ -479,7 +479,7 @@ class Adapter
             $result = self::exec($command);
 
             return $output;
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             throw $e;
         }
     }
@@ -497,7 +497,7 @@ class Adapter
     {
         try {
             if (!$this->partner_from->sec_pkcs12)
-                throw new Exception('Config error : PKCS12 (' . $this->partner_from->id . ')');
+                throw new \Exception('Config error : PKCS12 (' . $this->partner_from->id . ')');
 
             $password = ($this->partner_from->sec_pkcs12_password ? ' -password ' . escapeshellarg($this->partner_from->sec_pkcs12_password) : ' -nopassword');
 
@@ -519,7 +519,7 @@ class Adapter
             $result = self::exec($command);
 
             return $output;
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             throw $e;
         }
     }
@@ -553,7 +553,7 @@ class Adapter
             $result = self::exec($command);
 
             return $output;
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             throw $e;
         }
     }
@@ -574,7 +574,7 @@ class Adapter
             else
                 $certificate = $this->partner_to->sec_certificate;
 
-            if (!$certificate) throw new Exception('Unable to extract private key from PKCS12 file. (' . $this->partner_to->sec_pkcs12 . ' - using:' . $this->partner_to->sec_pkcs12_password . ')');
+            if (!$certificate) throw new \Exception('Unable to extract private key from PKCS12 file. (' . $this->partner_to->sec_pkcs12 . ' - using:' . $this->partner_to->sec_pkcs12_password . ')');
 
             $output = self::getTempFilename();
 
@@ -613,7 +613,7 @@ class Adapter
             $result = $this->exec($command);*/
 
             return $output;
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             throw $e;
         }
     }
@@ -693,7 +693,7 @@ class Adapter
             $result = $this->exec($command);
 
             return $output;
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             throw $e;
         }
     }

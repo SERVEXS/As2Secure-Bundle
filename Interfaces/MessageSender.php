@@ -15,9 +15,9 @@ interface MessageSender
      * @param $toPartner
      * @param $fromPartner
      * @param $messageContent
-     * @throws \Exception
-     * @throws \TechData\AS2SecureBundle\Models\AS2Exception
-     * @throws \TechData\AS2SecureBundle\Models\Exception
+     * @param null $messageSubject
+     *
+     * @return
      */
-    public function sendMessage($toPartner, $fromPartner, $messageContent);
+    public function sendMessage($toPartner, $fromPartner, $messageContent, $messageSubject = null);
 }

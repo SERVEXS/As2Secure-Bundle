@@ -140,7 +140,10 @@ class Header implements Countable, ArrayAccess, Iterator
     {
         $key = strtolower($key);
         $tmp = array_change_key_case($this->headers);
-        if (isset($tmp[$key])) return $tmp[$key];
+        if (isset($tmp[$key])) {
+            return trim($tmp[$key], '"');
+        }
+
         return false;
     }
 

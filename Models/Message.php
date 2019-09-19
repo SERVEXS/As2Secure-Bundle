@@ -30,6 +30,7 @@ namespace TechData\AS2SecureBundle\Models;
  */
 
 use TechData\AS2SecureBundle\Factories\MDN as MDNFactory;
+use TechData\AS2SecureBundle\Models\Horde\MIME\Horde_MIME_Part;
 
 class Message extends AbstractBase
 {
@@ -38,6 +39,8 @@ class Message extends AbstractBase
      * @var MDNFactory
      */
     private $mdnFactory;
+
+    private $messageSubject = null;
 
 
     protected $mic_checksum = false;
@@ -51,6 +54,10 @@ class Message extends AbstractBase
     public function initialize($data, $params = array())
     {
         $this->initializeBase($data, $params);
+
+        if (isset($params['message_subject'])) {
+            $this->messageSubject = $params['message_subject'];
+        }
 
         if ($data instanceof Request) {
             $this->path = $data->getPath();
@@ -183,7 +190,7 @@ class Message extends AbstractBase
 
             $file = Adapter::getTempFilename();
             file_put_contents($file, $mime_part->toString());
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             throw $e;
             return false;
         }
@@ -196,9 +203,10 @@ class Message extends AbstractBase
 
                 //echo file_get_contents($file);
                 $this->mic_checksum = $this->getMicChecksum($file);
-            } catch (Exception $e) {
+            } catch (\Exception $e) {
                 throw $e;
                 return false;
+
             }
         }
 
@@ -207,7 +215,7 @@ class Message extends AbstractBase
             try {
                 $file = $this->adapter->encrypt($file);
                 $this->is_crypted = true;
-            } catch (Exception $e) {
+            } catch (\Exception $e) {
                 throw $e;
                 return false;
             }
@@ -220,19 +228,24 @@ class Message extends AbstractBase
         else{
             file_put_contents($this->path, $mime_part->toString());
         }*/
-
         // headers setup
+
+        $messageSubject = $this->messageSubject;
+        if ($messageSubject == null) {
+            $messageSubject = $this->getPartnerFrom()->send_subject;
+        }
+
         $headers = array(
-            'AS2-From' => '"' . $this->getPartnerFrom()->id . '"',
-            'AS2-To' => '"' . $this->getPartnerTo()->id . '"',
+            'AS2-From' => $this->getPartnerFrom()->id,
+            'AS2-To' => $this->getPartnerTo()->id,
             'AS2-Version' => '1.0',
             'From' => $this->getPartnerFrom()->email,
-            'Subject' => $this->getPartnerFrom()->send_subject,
+            'Subject' => $messageSubject,
             'Message-ID' => $this->getMessageId(),
             'Mime-Version' => '1.0',
-            'Disposition-Notification-To' => $this->getPartnerFrom()->send_url,
+            'Disposition-Notification-To' => $this->getPartnerFrom()->mdn_url,
             'Recipient-Address' => $this->getPartnerTo()->send_url,
-            'User-Agent' => 'AS2Secure - PHP Lib for AS2 message encoding / decoding',
+            'User-Agent' => 'SupportPlaza AS2Secure HTTP Client',
         );
 
         if ($this->getPartnerTo()->mdn_signed) {

@@ -1,6 +1,8 @@
 <?php
 
 namespace TechData\AS2SecureBundle\Models;
+use TechData\AS2SecureBundle\Models\Horde\MIME\Horde_MIME_Part;
+
 /**
  * AS2Secure - PHP Lib for AS2 message encoding / decoding
  *
@@ -85,12 +87,12 @@ class MDN extends AbstractBase
 
             try {
                 $this->setPartnerFrom($params['partner_from']);
-            } catch (Exception $e) {
+            } catch (\Exception $e) {
                 $this->partner_from = false;
             }
             try {
                 $this->setPartnerTo($params['partner_to']);
-            } catch (Exception $e) {
+            } catch (\Exception $e) {
                 $this->partner_to = false;
             }
         } elseif ($data instanceof Request) { // parse response
@@ -112,12 +114,12 @@ class MDN extends AbstractBase
         } elseif ($data instanceof Horde_MIME_Part) {
             try {
                 $this->setPartnerFrom($params['partner_from']);
-            } catch (Exception $e) {
+            } catch (\Exception $e) {
                 $this->partner_from = false;
             }
             try {
                 $this->setPartnerTo($params['partner_to']);
-            } catch (Exception $e) {
+            } catch (\Exception $e) {
                 $this->partner_to = false;
             }
 
@@ -294,7 +296,7 @@ class MDN extends AbstractBase
             'input' => false,
             'crlf' => "\n"
         );
-        $decoder = new Mail_mimeDecode(file_get_contents($this->path));
+        $decoder = new \Mail_mimeDecode(file_get_contents($this->path));
         $structure = $decoder->decode($params);
 
         // reset values before decoding (for security reasons)

@@ -8,11 +8,12 @@
 
 namespace TechData\AS2SecureBundle\Interfaces;
 
-
 interface Events
 {
-    CONST LOG = 'tech_data_as2_secure.event.log';
-    CONST ERROR = 'tech_data_as2_secure.event.error';
-    CONST MESSAGE_RECIEVED = 'tech_data_as2_secure.event.message_received';
-    CONST MESSAGE_SENT = 'tech_data_as2_secure.event.message_sent';
+    const LOG = 'tech_data_as2_secure.event.log';
+    const ERROR = 'tech_data_as2_secure.event.error';
+    const MESSAGE_RECIEVED = 'tech_data_as2_secure.event.message_received';
+    const MESSAGE_SENT = 'tech_data_as2_secure.event.message_sent';
+    const INCOMING_AS2_REQUEST = 'tech_data_as2_secure.event.incoming_as2_request';
+    const OUTGOING_MESSAGE = 'tech_data_as2_secure.event.outgoing_message';
 }

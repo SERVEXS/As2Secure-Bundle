@@ -3,6 +3,9 @@ namespace TechData\AS2SecureBundle\Models\Horde\MIME;
 /**
  * The character(s) used internally for EOLs.
  */
+use TechData\AS2SecureBundle\Models\Horde\Horde_MIME;
+use TechData\AS2SecureBundle\Models\Horde\Horde_String;
+
 define('MIME_PART_EOL', "\n");
 
 /**
@@ -1175,7 +1178,7 @@ class Horde_MIME_Part
                 if (function_exists('convert_uudecode')) {
                     $message = convert_uuencode($this->_contents);
                 } else {
-                    $files = &Mail_mimeDecode::uudecode($this->_contents);
+                    $files = \Mail_mimeDecode::uudecode($this->_contents);
                     $message = $files[0]['filedata'];
                 }
                 $this->_flags['lastTransferDecode'] = '8bit';

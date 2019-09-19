@@ -64,7 +64,7 @@ class Horde_MIME_Message extends Horde_MIME_Part
             $mime_part->setMIMEId(1);
         }
 
-        $mime_message = &new Horde_MIME_Message($server);
+        $mime_message = new Horde_MIME_Message($server);
         $mime_message->addPart($mime_part);
         $mime_message->buildMessage();
 
@@ -208,7 +208,7 @@ class Horde_MIME_Message extends Horde_MIME_Part
             $part = $this->getPart($id);
         }
         if (is_a($part, 'Horde_MIME_Message')) {
-            $newpart = &new Horde_MIME_Part();
+            $newpart = new Horde_MIME_Part();
             $skip = array('_build', '_defaultServer');
             foreach (array_keys(get_object_vars($part)) as $key) {
                 /* Ignore local variables that aren't a part of the original

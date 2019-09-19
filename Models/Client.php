@@ -79,8 +79,9 @@ class Client
         curl_setopt($ch, CURLOPT_FORBID_REUSE, 1);
         curl_setopt($ch, CURLOPT_POST, 1);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $request->getContent());
-        curl_setopt($ch, CURLOPT_USERAGENT, 'AS2Secure - PHP Lib for AS2 message encoding / decoding');
+        curl_setopt($ch, CURLOPT_USERAGENT, 'SupportPlaza AS2Secure HTTP Client');
         curl_setopt($ch, CURLOPT_HEADERFUNCTION, array($this, 'handleResponseHeader'));
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 
         // authentication setup
         $auth = $request->getAuthentication();

@@ -4,9 +4,12 @@ namespace TechData\AS2SecureBundle\Services;
 
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\Request;
+use TechData\AS2SecureBundle\Events\IncomingAs2Request;
 use TechData\AS2SecureBundle\Events\MessageReceived;
 use TechData\AS2SecureBundle\Events\MessageSent;
+use TechData\AS2SecureBundle\Events\OutgoingMessage;
 use TechData\AS2SecureBundle\Factories\Adapter as AdapterFactory;
+use TechData\AS2SecureBundle\Interfaces\Events;
 use TechData\AS2SecureBundle\Models\Client;
 use TechData\AS2SecureBundle\Factories\Message as MessageFactory;
 use TechData\AS2SecureBundle\Factories\Partner as PartnerFactory;
@@ -76,6 +79,10 @@ class AS2 implements MessageSender
         // Convert the symfony request to a as2s request
         $as2Request = $this->requestToAS2Request($request);
 
+        $this->eventDispatcher->dispatch(
+            IncomingAs2Request::EVENT, new IncomingAs2Request($as2Request)
+        );
+
         // Take the request and lets AS2S handle it
         $as2Response = $this->as2Server->handle($as2Request);
 
@@ -94,8 +101,12 @@ class AS2 implements MessageSender
         $files = $response_object->getFiles();
         foreach ($files as $file) {
             // We have an incoming message.  Lets fire the event for it.
-            $event = new MessageReceived();
-            $event->setMessage(file_get_contents($file['path']));
+            $event = (new MessageReceived())
+                ->setMessageId($as2Request->getMessageId())
+                ->setMessage(file_get_contents($file['path']))
+                ->setSendingPartnerId($partner->id)
+                ->setReceivingPartnerId($as2Response->getPartnerTo()->id);
+
             $this->eventDispatcher->dispatch(MessageReceived::EVENT, $event);
         }
     }
@@ -104,19 +115,22 @@ class AS2 implements MessageSender
         $flattenedHeaders = array();
         foreach($request->headers as $key => $header) {
             $flattenedHeaders[$key] = reset($header);
-        }        
+        }
         return $this->requestFactory->build($request->getContent(), new Header($flattenedHeaders));
     }
-    
+
     /**
      * @param $toPartner
      * @param $fromPartner
      * @param $messageContent
+     * @param null $messageSubject
+     * @param null $filename
+     *
+     * @return array
      * @throws \Exception
      * @throws \TechData\AS2SecureBundle\Models\AS2Exception
-     * @throws \TechData\AS2SecureBundle\Models\Exception
      */
-    public function sendMessage($toPartner, $fromPartner, $messageContent)
+    public function sendMessage($toPartner, $fromPartner, $messageContent, $messageSubject = null, $filename = null)
     {
         // process request to build outbound AS2 message to VAR
 
@@ -124,6 +138,7 @@ class AS2 implements MessageSender
         $message = $this->messageFactory->build(false, array(
             'partner_from' => $fromPartner,
             'partner_to' => $toPartner,
+            'message_subject' => $messageSubject
         ));
 
         // initialize AS2Adapter for public key encryption between StreamOne and the receiving VAR
@@ -132,8 +147,12 @@ class AS2 implements MessageSender
         // write the EDI message that will be sent to a temp file, then use the AS2 adapter to encrypt it
         $tmp_file = $adapter->getTempFilename();
         file_put_contents($tmp_file, $messageContent);
-        $message->addFile($tmp_file, 'application/edi-x12');
+        $message->addFile($tmp_file, 'application/edi-x12', $filename);
         $message->encode();
+
+        $this->eventDispatcher->dispatch(
+            OutgoingMessage::EVENT, new OutgoingMessage($message, $messageContent)
+        );
 
         // send AS2 message
         $result = $this->client->sendRequest($message);
@@ -141,6 +160,7 @@ class AS2 implements MessageSender
         $messageSent->setMessage(print_r($result, true));
         $this->eventDispatcher->dispatch(MessageSent::EVENT, $messageSent);
 
+        return $result;
     }
 }
 
