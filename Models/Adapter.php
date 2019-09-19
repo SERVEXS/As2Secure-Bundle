@@ -578,7 +578,7 @@ class Adapter
 
             $output = self::getTempFilename();
 
-            $command = self::$ssl_openssl . ' smime ' .
+            $command = self::$ssl_openssl . ' cms ' .
                 ' -encrypt' .
                 ' -in ' . escapeshellarg($input) .
                 ' -out ' . escapeshellarg($output) .
@@ -596,21 +596,6 @@ class Adapter
 
             $content = $headers . $content;
             file_put_contents($output, $content);
-
-            /*if ($this->partner_to->sec_pkcs12)
-                $security = ' -pkcs12 '.escapeshellarg($this->partner_to->sec_pkcs12).
-                            ($this->partner_to->sec_pkcs12_password?' -password '.escapeshellarg($this->partner_to->sec_pkcs12_password):' -nopassword');
-            else
-                $security = ' -cert '.escapeshellarg($this->partner_to->sec_certificate);
-
-            $command = self::$javapath.' -jar '.escapeshellarg(AS2_DIR_BIN.self::$ssl_adapter).
-                                       ' encrypt'.
-                                       $security.
-//                                       ' -cypher '.escapeshellarg($cypher).
-                                       ' -in '.escapeshellarg($input).
-                                       ' -out '.escapeshellarg($output);
-
-            $result = $this->exec($command);*/
 
             return $output;
         } catch (\Exception $e) {
@@ -661,11 +646,6 @@ class Adapter
      */
     public function decrypt($input)
     {
-        /*file_put_contents('/tmp/decrypt', '---------------------------------------------------------------'."\n", FILE_APPEND);
-        file_put_contents('/tmp/decrypt', 'try to decrypt file :'."\n", FILE_APPEND);
-        file_put_contents('/tmp/decrypt', '---------------------------------------------------------------'."\n", FILE_APPEND);
-        file_put_contents('/tmp/decrypt', print_r(file_get_contents($input), true)."\n", FILE_APPEND);*/
-
         try {
             $private_key = self::getPrivateFromPKCS12($this->partner_to->sec_pkcs12, $this->partner_to->sec_pkcs12_password, '');
             if (!$private_key)
@@ -673,22 +653,11 @@ class Adapter
 
             $output = self::getTempFilename();
 
-            $command = self::$ssl_openssl . ' smime ' .
+            $command = self::$ssl_openssl . ' cms ' .
                 ' -decrypt ' .
                 ' -in ' . escapeshellarg($input) .
                 ' -inkey ' . escapeshellarg($private_key) .
                 ' -out ' . escapeshellarg($output);
-
-            // seems to generate non-conform message
-            /*$security = ' -pkcs12 '.escapeshellarg($this->partner_to->sec_pkcs12).
-                ($this->partner_to->sec_pkcs12_password?' -password '.escapeshellarg($this->partner_to->sec_pkcs12_password):' -nopassword');
-
-            $command = self::$javapath.' -jar '.escapeshellarg(AS2_DIR_BIN.self::$ssl_adapter).
-                                       ' decrypt'.
-                                       $security.
-                                       ' -in '.escapeshellarg($input).
-                                       ' -out '.escapeshellarg($output).
-                                       ' >/dev/null';*/
 
             $result = $this->exec($command);
 
