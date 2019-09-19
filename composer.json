@@ -1,5 +1,5 @@
 {
-  "name": "techdata/as2secure-bundle",
+  "name": "servexs/as2secure-bundle",
   "type": "symfony-bundle",
   "description": "AS2Secure (http://www.as2secure.com)_abstraction to allow use of library in Symfony2 applications.",
   "keywords": [
