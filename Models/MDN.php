@@ -200,7 +200,7 @@ class MDN extends AbstractBase
 
         // second part
         $lines = new Header();
-        $lines->addHeader('Reporting-UA', 'AS2Secure - PHP Lib for AS2 message encoding / decoding');
+        $lines->addHeader('Reporting-UA', 'Dimass SupportPlaza AS2Secure');
         if ($this->getPartnerFrom()) {
             $lines->addHeader('Original-Recipient', 'rfc822; "' . $this->getPartnerFrom()->id . '"');
             $lines->addHeader('Final-Recipient', 'rfc822; "' . $this->getPartnerFrom()->id . '"');
@@ -224,8 +224,8 @@ class MDN extends AbstractBase
         $this->headers = new Header(array('AS2-Version' => '1.0',
             'Message-ID' => $this->getMessageId(),
             'Mime-Version' => '1.0',
-            'Server' => 'AS2Secure - PHP Lib for AS2 message encoding / decoding',
-            'User-Agent' => 'AS2Secure - PHP Lib for AS2 message encoding / decoding',
+            'Server' => 'Dimass SupportPlaza AS2Secure',
+            'User-Agent' => 'Dimass SupportPlaza AS2Secure',
         ));
         $this->headers->addHeaders($container->header());
 
