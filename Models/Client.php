@@ -97,7 +97,7 @@ class Client
         $this->response_content = $response;
 
         // handle http error response
-        if ($info['http_code'] != 200)
+        if ($info['http_code'] != 200 || $info['http_code'] != 202)
             throw new AS2Exception('HTTP Error Code : ' . $info['http_code'] . '(url:' . $request->getUrl() . ').');
 
         // handle curl error
