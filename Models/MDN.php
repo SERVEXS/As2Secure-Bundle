@@ -192,6 +192,7 @@ class MDN extends AbstractBase
     {
         // container
         $container = new Horde_MIME_Part('multipart/report', ' ');
+        $container->setContentTypeParameter('report-type', 'disposition-notification');
 
         // first part
         $text = new Horde_MIME_Part('text/plain', $this->getMessage(), MIME_DEFAULT_CHARSET, null, '7bit');
