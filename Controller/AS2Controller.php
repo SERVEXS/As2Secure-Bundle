@@ -1,19 +1,14 @@
 <?php
 
-namespace TechData\AS2SecureBundle\Controller;
+declare(strict_types=1);
 
+namespace TechData\AS2SecureBundle\Controller;
 
 use Symfony\Component\HttpFoundation\Request;
 use TechData\AS2SecureBundle\Services\AS2;
 
-/**
- * Description of AS2Controller
- *
- * @author wpigott
- */
 class AS2Controller
 {
-
     /**
      * @var AS2
      */

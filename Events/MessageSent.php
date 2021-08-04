@@ -1,42 +1,37 @@
 <?php
 
+declare(strict_types=1);
+
 namespace TechData\AS2SecureBundle\Events;
 
 use Symfony\Component\EventDispatcher\Event;
+use TechData\AS2SecureBundle\Models\Message;
 
-/**
- * Description of MessageSent
- *
- * @author wpigott
- */
-class MessageSent extends Event {
-    const EVENT = 'MESSAGE_SENT';
-
+class MessageSent extends Event
+{
+    /**
+     * @var Message
+     */
     private $message;
-    private $messageType;
-    private $headers = array();
 
-    public function getMessage() {
-        return $this->message;
-    }
+    /**
+     * @var array
+     */
+    private $headers = [];
 
-    public function setMessage($message) {
+    public function __construct(Message $message, array $headers)
+    {
+        $this->headers = $headers;
         $this->message = $message;
     }
 
-    public function getMessageType() {
-        return $this->messageType;
+    public function getMessage(): Message
+    {
+        return $this->message;
     }
 
-    public function getHeaders() {
+    public function getHeaders(): array
+    {
         return $this->headers;
-    }
-
-    public function setMessageType($messageType) {
-        $this->messageType = $messageType;
-    }
-
-    public function setHeaders($headers) {
-        $this->headers = $headers;
     }
 }

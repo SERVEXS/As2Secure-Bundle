@@ -5,15 +5,8 @@ namespace TechData\AS2SecureBundle\Events;
 use Symfony\Component\EventDispatcher\Event;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
-/**
- * Description of MessageReceived
- *
- * @author wpigott
- */
-class MessageReceived extends Event {
-
-    const EVENT = 'MESSAGE_RECEIVED';
-
+class MessageReceived extends Event
+{
     /**
      * @var string
      */

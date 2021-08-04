@@ -8,7 +8,7 @@
 
 namespace TechData\AS2SecureBundle\Factories;
 
-use Symfony\Component\EventDispatcher\EventDispatcher;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use TechData\AS2SecureBundle\Factories\AbstractFactory;
 use TechData\AS2SecureBundle\Factories\MDN as MDNFactory;
 use TechData\AS2SecureBundle\Factories\Message as MessageFactory;
@@ -17,20 +17,23 @@ use TechData\AS2SecureBundle\Models\Request as RequestModel;
 class Request extends AbstractFactory
 {
     protected $request = null;
+
     /**
      * @var MDNFactory
      */
     private $mdnFactory;
+
     /**
      * @var MessageFactory
      */
     private $messageFactory;
+
     /**
-     * @var EventDispatcher
+     * @var EventDispatcherInterface
      */
     private $eventDispatcher;
 
-    function __construct(MDNFactory $mdnFactory, MessageFactory $messageFactory, EventDispatcher $eventDispatcher)
+    function __construct(MDNFactory $mdnFactory, MessageFactory $messageFactory, EventDispatcherInterface $eventDispatcher)
     {
         $this->mdnFactory = $mdnFactory;
         $this->messageFactory = $messageFactory;

@@ -29,32 +29,35 @@ namespace TechData\AS2SecureBundle\Models;
  * @version 0.8.2
  *
  */
-use Symfony\Component\EventDispatcher\EventDispatcher;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use TechData\AS2SecureBundle\Events\Log;
 use TechData\AS2SecureBundle\Factories\MDN as MDNFactory;
 use TechData\AS2SecureBundle\Factories\Message as MessageFactory;
 use Mail_mimeDecode;
+use TechData\AS2SecureBundle\Interfaces\Events;
 use TechData\AS2SecureBundle\Models\Horde\MIME\Horde_MIME_Structure;
 
 class Request extends AbstractBase
 {
     // Injected Services
     protected $request = null;
+
     /**
      * @var MDNFactory
      */
     private $mdnFactory;
+
     /**
      * @var MessageFactory
      */
     private $messageFactory;
 
     /**
-     * @var EventDispatcher
+     * @var EventDispatcherInterface
      */
     private $eventDispatcher;
 
-    function __construct(MDNFactory $mdnFactory, MessageFactory $messageFactory, EventDispatcher $eventDispatcher)
+    function __construct(MDNFactory $mdnFactory, MessageFactory $messageFactory, EventDispatcherInterface $eventDispatcher)
     {
         $this->mdnFactory = $mdnFactory;
         $this->messageFactory = $messageFactory;
@@ -144,9 +147,9 @@ class Request extends AbstractBase
                 $input = Adapter::getTempFilename();
                 file_put_contents($input, $mime_part->toString(true));
 
-                $this->eventDispatcher->dispatch('log', new Log(Log::TYPE_INFO, 'AS2 message is encrypted.'));
+                $this->eventDispatcher->dispatch(Events::LOG, new Log(Log::TYPE_INFO, 'AS2 message is encrypted.'));
                 $input = $this->adapter->decrypt($input);
-                $this->eventDispatcher->dispatch('log', new Log(Log::TYPE_INFO, 'The data has been decrypted using the key "' . $this->getPartnerTo() . '".'));
+                $this->eventDispatcher->dispatch(Events::LOG, new Log(Log::TYPE_INFO, 'The data has been decrypted using the key "' . $this->getPartnerTo() . '".'));
                 $crypted = true;
 
                 // reload extracted content to get mimetype
@@ -163,7 +166,7 @@ class Request extends AbstractBase
         $mic = false;
         if (strtolower($mimetype) == 'multipart/signed') {
             try {
-                $this->eventDispatcher->dispatch('log', new Log(Log::TYPE_INFO, 'AS2 message is signed.'));
+                $this->eventDispatcher->dispatch(Events::LOG, new Log(Log::TYPE_INFO, 'AS2 message is signed.'));
 
                 // get MicChecksum from signature
                 $mic = $this->adapter->getMicChecksum($input);
@@ -171,14 +174,14 @@ class Request extends AbstractBase
                 $input = $this->adapter->verify($input);
                 $signed = true;
 
-                $this->eventDispatcher->dispatch('log', new Log(Log::TYPE_INFO, 'The sender used the algorithm "' . $structure->ctype_parameters['micalg'] . '" to sign the message.'));
+                $this->eventDispatcher->dispatch(Events::LOG, new Log(Log::TYPE_INFO, 'The sender used the algorithm "' . $structure->ctype_parameters['micalg'] . '" to sign the message.'));
 
                 // reload extracted content to get mimetype
                 $decoder = new \Mail_mimeDecode(file_get_contents($input));
                 $structure = $decoder->decode($params);
                 $mimetype = $structure->ctype_primary . '/' . $structure->ctype_secondary;
 
-                $this->eventDispatcher->dispatch('log', new Log(Log::TYPE_INFO, 'Using certificate "' . $this->getPartnerFrom() . '" to verify signature.'));
+                $this->eventDispatcher->dispatch(Events::LOG, new Log(Log::TYPE_INFO, 'Using certificate "' . $this->getPartnerFrom() . '" to verify signature.'));
             } catch (\Exception $e) {
                 throw new AS2Exception($e->getMessage(), 5);
             }

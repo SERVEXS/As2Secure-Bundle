@@ -37,8 +37,9 @@ class Client
      * @var RequestFactory
      */
     private $requestFactory;
-    protected $response_headers = array();
-    protected $response_content = '';
+
+    protected $responseHeaders = [];
+    protected $responseContent = '';
     protected $response_indice = 0;
 
     public function __construct(RequestFactory $requestFactory)
@@ -55,13 +56,15 @@ class Client
      */
     public function sendRequest($request)
     {
-        if (!$request instanceof Message && !$request instanceof MDN) throw new AS2Exception('Unexpected format');
+        if (!$request instanceof Message && !$request instanceof MDN) {
+            throw new AS2Exception('Unexpected format');
+        }
 
         // format headers
         $headers = $request->getHeaders()->toFormattedArray();
 
         // initialize variables for building response headers with curl
-        $this->response_headers = array();
+        $this->response_headers = [];
         $this->response_content = '';
         $this->response_indice = 0;
 
@@ -89,6 +92,7 @@ class Client
             curl_setopt($ch, CURLOPT_HTTPAUTH, $auth['method']);
             curl_setopt($ch, CURLOPT_USERPWD, urlencode($auth['login']) . ':' . urlencode($auth['password']));
         }
+
         $response = curl_exec($ch);
         $info = curl_getinfo($ch);
         $error = curl_error($ch);
@@ -96,37 +100,36 @@ class Client
 
         $this->response_content = $response;
 
-        // handle http error response
-        if ($info['http_code'] != 200 && $info['http_code'] != 202)
+        if ($info['http_code'] != 200 && $info['http_code'] != 202) {
             throw new AS2Exception('HTTP Error Code : ' . $info['http_code'] . '(url:' . $request->getUrl() . ').');
-
-        // handle curl error
-        if ($error)
-            throw new AS2Exception($error);
-
-        if ($request instanceof Message && $request->getPartnerTo()->mdn_request == Partner::ACK_SYNC) {
-            $temp_response = $this->requestFactory->build($response, new Header($this->response_headers[count($this->response_headers) - 1]));
-            $as2_response = $temp_response->getObject();
-            $as2_response->decode();
-        } else {
-            $as2_response = null;
         }
 
-        return array('request' => $request,
+        if ($error) {
+            throw new AS2Exception($error);
+        }
+
+        $as2Response = null;
+
+        if ($request instanceof Message && $request->getPartnerTo()->mdn_request == Partner::ACK_SYNC) {
+            $tmpResponse = $this->requestFactory->build($response, new Header($this->response_headers[count($this->response_headers) - 1]));
+            $as2Response = $tmpResponse->getObject();
+            $as2Response->decode();
+        }
+
+        return [
+            'request' => $request,
             'headers' => $this->response_headers[count($this->response_headers) - 1],
-            'response' => $as2_response,
-            'info' => $info);
+            'response' => $as2Response,
+            'info' => $info
+        ];
     }
 
-    /**
-     * Return the last request : headers/content
-     *
-     * @return array
-     */
-    public function getLastResponse()
+    public function getLastResponse(): array
     {
-        return array('headers' => $this->response_headers[count($this->response_headers) - 1],
-            'content' => $this->response_content);
+        return [
+            'headers' => $this->response_headers[count($this->response_headers) - 1],
+            'content' => $this->response_content
+        ];
     }
 
     /**
@@ -145,6 +148,7 @@ class Client
             $pos = strpos($header, ':');
             if ($pos !== false) $this->response_headers[$this->response_indice][trim(strtolower(substr($header, 0, $pos)))] = trim(substr($header, $pos + 1));
         }
+
         return strlen($header);
     }
 }

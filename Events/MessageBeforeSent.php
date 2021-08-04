@@ -4,24 +4,8 @@ namespace TechData\AS2SecureBundle\Events;
 
 use Symfony\Component\EventDispatcher\Event;
 
-class MessageBeforeSent extends Event {
-
-    const EVENT = 'MESSAGE_BEFORE_SENT';
-
-    /**
-     * @param string $content
-     * @param string $messageId
-     * @param string $sender
-     * @param string $receiver
-     */
-    public function __construct($content, $messageId, $sender, $receiver)
-    {
-        $this->content = $content;
-        $this->messageId = $messageId;
-        $this->sender = $sender;
-        $this->receiver = $receiver;
-    }
-
+class MessageBeforeSent extends Event
+{
     /**
      * @var string
      */
@@ -41,4 +25,32 @@ class MessageBeforeSent extends Event {
      * @var string
      */
     private $receiver;
+
+    public function __construct(strintg $content, string $messageId, string $sender, string $receiver)
+    {
+        $this->content = $content;
+        $this->messageId = $messageId;
+        $this->sender = $sender;
+        $this->receiver = $receiver;
+    }
+
+    public function getContent()
+    {
+        return $this->content;
+    }
+
+    public function getMessageId(): string
+    {
+        return $this->messageId;
+    }
+
+    public function getSender(): string
+    {
+        return $this->sender;
+    }
+
+    public function getReceiver(): string
+    {
+        return $this->receiver;
+    }
 }

@@ -5,6 +5,8 @@ namespace TechData\AS2SecureBundle\Services;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\Request;
 use TechData\AS2SecureBundle\Events\IncomingAs2Request;
+use TechData\AS2SecureBundle\Events\Log;
+use TechData\AS2SecureBundle\Events\MdnReceived;
 use TechData\AS2SecureBundle\Events\MessageReceived;
 use TechData\AS2SecureBundle\Events\MessageSent;
 use TechData\AS2SecureBundle\Events\OutgoingMessage;
@@ -16,26 +18,17 @@ use TechData\AS2SecureBundle\Factories\Partner as PartnerFactory;
 use TechData\AS2SecureBundle\Factories\Request as RequestFactory;
 use TechData\AS2SecureBundle\Interfaces\MessageSender;
 use TechData\AS2SecureBundle\Models\Header;
+use TechData\AS2SecureBundle\Models\MDN;
 use TechData\AS2SecureBundle\Models\Server;
 
-/**
- * Description of AS2
- *
- * @author wpigott
- */
 class AS2 implements MessageSender
 {
-
-    CONST EVENT_MESSAGE_RECEIVED = 'message_received';
-
     /**
-     *
      * @var EventDispatcherInterface
      */
     private $eventDispatcher;
 
     /**
-     *
      * @var PartnerFactory
      */
     private $partnerFactory;
@@ -49,21 +42,30 @@ class AS2 implements MessageSender
      * @var RequestFactory
      */
     private $requestFactory;
+
     /**
      * @var MessageFactory
      */
     private $messageFactory;
+
     /**
      * @var AdapterFactory
      */
     private $adapterFactory;
+
     /**
      * @var Client
      */
     private $client;
 
-    public function __construct(EventDispatcherInterface $eventDispatcher, Server $server, RequestFactory $requestFactory,
-                                PartnerFactory $partnerFactory, MessageFactory $messageFactory, AdapterFactory $adapterFactory, Client $client)
+    public function __construct(
+        EventDispatcherInterface $eventDispatcher,
+        Server $server,
+        RequestFactory $requestFactory,
+        PartnerFactory $partnerFactory,
+        MessageFactory $messageFactory,
+        AdapterFactory $adapterFactory,
+        Client $client)
     {
         $this->eventDispatcher = $eventDispatcher;
         $this->as2Server = $server;
@@ -79,8 +81,12 @@ class AS2 implements MessageSender
         // Convert the symfony request to a as2s request
         $as2Request = $this->requestToAS2Request($request);
 
+        $this->eventDispatcher->dispatch(Events::LOG,
+            new Log(Log::TYPE_INFO, sprintf('Received AS2 request with message ID: %s', $as2Request->getMessageId()))
+        );
+
         $this->eventDispatcher->dispatch(
-            IncomingAs2Request::EVENT, new IncomingAs2Request($as2Request)
+            Events::INCOMING_AS2_REQUEST, new IncomingAs2Request($as2Request)
         );
 
         // Take the request and lets AS2S handle it
@@ -107,7 +113,7 @@ class AS2 implements MessageSender
                 ->setSendingPartnerId($partner->id)
                 ->setReceivingPartnerId($as2Response->getPartnerTo()->id);
 
-            $this->eventDispatcher->dispatch(MessageReceived::EVENT, $event);
+            $this->eventDispatcher->dispatch(Events::MESSAGE_RECIEVED, $event);
         }
     }
 
@@ -151,14 +157,18 @@ class AS2 implements MessageSender
         $message->encode();
 
         $this->eventDispatcher->dispatch(
-            OutgoingMessage::EVENT, new OutgoingMessage($message, $messageContent)
+            Events::OUTGOING_MESSAGE, new OutgoingMessage($message, $messageContent)
         );
 
-        // send AS2 message
         $result = $this->client->sendRequest($message);
-        $messageSent = new MessageSent();
-        $messageSent->setMessage(print_r($result, true));
-        $this->eventDispatcher->dispatch(MessageSent::EVENT, $messageSent);
+        $this->eventDispatcher->dispatch(
+            Events::MESSAGE_SENT, new MessageSent($message, $result['headers'])
+        );
+
+        $response = $result['response'];
+        if ($response instanceof MDN) {
+            $this->eventDispatcher->dispatch(Events::MDN_RECEIVED, new MdnReceived($response));
+        }
 
         return $result;
     }

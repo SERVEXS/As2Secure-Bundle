@@ -9,8 +9,6 @@ use TechData\AS2SecureBundle\Models\Request;
 
 class OutgoingMessage extends Event
 {
-    const EVENT = 'OUTGOING_MESSAGE';
-
     /**
      * @var Message
      */
@@ -20,26 +18,17 @@ class OutgoingMessage extends Event
      */
     private $messageContents;
 
-    /**
-     * @param Message $message
-     */
     public function __construct(Message $message, string $messageContents)
     {
         $this->message = $message;
         $this->messageContents = $messageContents;
     }
 
-    /**
-     * @return Message
-     */
     public function getMessage(): Message
     {
         return $this->message;
     }
 
-    /**
-     * @return string
-     */
     public function getMessageContents(): string
     {
         return $this->messageContents;

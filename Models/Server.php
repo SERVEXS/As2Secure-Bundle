@@ -32,9 +32,13 @@ namespace TechData\AS2SecureBundle\Models;
 
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use TechData\AS2SecureBundle\Events\Log;
+use TechData\AS2SecureBundle\Events\MdnReceived;
 use TechData\AS2SecureBundle\Events\MessageSent;
+use TechData\AS2SecureBundle\Interfaces\Events;
 use TechData\AS2SecureBundle\Models\Client;
 use TechData\AS2SecureBundle\Factories\MDN as MdnFactory;
+use TechData\AS2SecureBundle\Models\Horde\MIME\Horde_MIME_Part;
+
 
 class Server
 {
@@ -42,7 +46,6 @@ class Server
     const TYPE_MDN = 'MDN';
 
     /**
-     *
      * @var EventDispatcherInterface
      */
     private $eventDispatcher;
@@ -51,6 +54,7 @@ class Server
      * @var MdnFactory
      */
     private $mdnFactory;
+
     /**
      * @var Client
      */
@@ -85,22 +89,21 @@ class Server
             //throw $e;
         }
 
-        //
         $mdn = null;
 
         if ($object instanceof Message || (!is_null($error) && !($object instanceof MDN))) {
+            
             $object_type = self::TYPE_MESSAGE;
-            $this->eventDispatcher->dispatch('log', new Log(Log::TYPE_INFO, 'Incoming transmission is a Message.'));
+            $this->eventDispatcher->dispatch(Events::LOG, new Log(Log::TYPE_INFO, 'Incoming transmission is a Message.'));
 
             try {
                 if (is_null($error)) {
                     $object->decode();
                     $files = $object->getFiles();
-                    $this->eventDispatcher->dispatch('log', new Log(Log::TYPE_INFO, count($files) . ' payload(s) found in incoming transmission.'));
+                    $this->eventDispatcher->dispatch(Events::LOG, new Log(Log::TYPE_INFO, count($files) . ' payload(s) found in incoming transmission.'));
                     foreach ($files as $key => $file) {
                         $content = file_get_contents($file['path']);
-                        $this->eventDispatcher->dispatch('log', new Log(Log::TYPE_INFO, 'Payload #' . ($key + 1) . ' : ' . round(strlen($content) / 1024, 2) . ' KB / "' . $file['filename'] . '".'));
-                        $this->saveMessage($content, array(), 'payload');
+                        $this->eventDispatcher->dispatch(Events::LOG, new Log(Log::TYPE_INFO, 'Payload #' . ($key + 1) . ' : ' . round(strlen($content) / 1024, 2) . ' KB / "' . $file['filename'] . '".'));
                     }
 
                     $mdn = $object->generateMDN($error);
@@ -116,10 +119,13 @@ class Server
                 $mdn->encode();
             }
         } elseif ($object instanceof MDN) {
+            $payload = new Horde_MIME_Part(null, $object->getContent());
+
             $object_type = self::TYPE_MDN;
-            $this->eventDispatcher->dispatch('log', new Log(Log::TYPE_INFO, 'Incoming transmission is a MDN.'));
+            $this->eventDispatcher->dispatch(Events::LOG, new Log(Log::TYPE_INFO, 'Incoming transmission is a MDN.'));
+            $this->eventDispatcher->dispatch(Events::MDN_RECEIVED, new MdnReceived($object));
         } else {
-            $this->eventDispatcher->dispatch('log', new Log(Log::TYPE_ERROR, 'Malformed data.'));
+            $this->eventDispatcher->dispatch(Events::LOG, new Log(Log::TYPE_ERROR, 'Malformed data.'));
         }
 
         // build MDN
@@ -148,7 +154,7 @@ class Server
                 // output MDN
                 echo $mdn->getContent();
 
-                $this->eventDispatcher->dispatch('log', new Log(Log::TYPE_INFO, 'An AS2 MDN has been sent.'));
+                $this->eventDispatcher->dispatch(Events::LOG, new Log(Log::TYPE_INFO, 'An AS2 MDN has been sent.'));
             } else {
                 // ASYNC method
 
@@ -158,34 +164,14 @@ class Server
                 // delegate the mdn sending to the client
                 $result = $this->client->sendRequest($mdn);
                 if ($result['info']['http_code'] == '200') {
-                    $this->eventDispatcher->dispatch('log', new Log(Log::TYPE_INFO, 'An AS2 MDN has been sent.'));
+                    $this->eventDispatcher->dispatch(Events::LOG, new Log(Log::TYPE_INFO, 'An AS2 MDN has been sent.'));
                 } else {
-                    $this->eventDispatcher->dispatch('log', new Log(Log::TYPE_ERROR, 'An error occurs while sending MDN message : ' . $result['info']['http_code']));
+                    $this->eventDispatcher->dispatch(Events::LOG, new Log(Log::TYPE_ERROR, 'An error occurs while sending MDN message : ' . $result['info']['http_code']));
                 }
             }
         }
 
         return $request;
-    }
-
-    /**
-     * Save the content of the request for futur handle and/or backup
-     *
-     * @param content       The content to save (mandatory)
-     * @param headers       The headers to save (optional)
-     * @param type          Values : raw | decrypted | payload (mandatory)
-     *
-     * @return       String  : The main filename
-     */
-    protected function saveMessage($content, $headers, $type = 'raw')
-    {
-
-        $message = new MessageSent();
-        $message->setMessage($content);
-        $message->setHeaders($headers);
-        $message->setMessageType($type);
-        $this->eventDispatcher->dispatch('messageSent', $message);
-
     }
 
     /**
@@ -205,7 +191,11 @@ class Server
         header("Content-Length: $size");
         ob_end_flush();     // Strange behaviour, will not work
         flush();            // Unless both are called !
-        ob_end_clean();
+
+        if (ob_get_contents()) {
+            ob_end_clean();
+        }
+
         session_write_close();
 
         // wait some seconds before sending MDN notification

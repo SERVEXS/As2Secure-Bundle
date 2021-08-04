@@ -1,13 +1,6 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: westin
- * Date: 3/15/2015
- * Time: 8:26 PM
- */
 
 namespace TechData\AS2SecureBundle\Interfaces;
-
 
 interface MessageSender
 {
@@ -19,5 +12,5 @@ interface MessageSender
      *
      * @return
      */
-    public function sendMessage($toPartner, $fromPartner, $messageContent, $messageSubject = null);
+    public function sendMessage($toPartner, $fromPartner, $messageContent, $messageSubject = null, $filename = null);
 }

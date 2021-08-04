@@ -1,19 +1,16 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: westin
- * Date: 3/15/2015
- * Time: 6:16 PM
- */
+
+declare(strict_types=1);
 
 namespace TechData\AS2SecureBundle\Interfaces;
 
 interface Events
 {
-    const LOG = 'tech_data_as2_secure.event.log';
-    const ERROR = 'tech_data_as2_secure.event.error';
-    const MESSAGE_RECIEVED = 'tech_data_as2_secure.event.message_received';
-    const MESSAGE_SENT = 'tech_data_as2_secure.event.message_sent';
-    const INCOMING_AS2_REQUEST = 'tech_data_as2_secure.event.incoming_as2_request';
-    const OUTGOING_MESSAGE = 'tech_data_as2_secure.event.outgoing_message';
+    public const LOG = 'tech_data_as2_secure.event.log';
+    public const ERROR = 'tech_data_as2_secure.event.error';
+    public const MESSAGE_RECEIVED = 'tech_data_as2_secure.event.message_received';
+    public const MESSAGE_SENT = 'tech_data_as2_secure.event.message_sent';
+    public const INCOMING_AS2_REQUEST = 'tech_data_as2_secure.event.incoming_as2_request';
+    public const OUTGOING_MESSAGE = 'tech_data_as2_secure.event.outgoing_message';
+    public const MDN_RECEIVED = 'tech_data_as2_secure.event.mdn_received';
 }
