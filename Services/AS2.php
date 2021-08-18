@@ -113,7 +113,7 @@ class AS2 implements MessageSender
                 ->setSendingPartnerId($partner->id)
                 ->setReceivingPartnerId($as2Response->getPartnerTo()->id);
 
-            $this->eventDispatcher->dispatch(Events::MESSAGE_RECIEVED, $event);
+            $this->eventDispatcher->dispatch(Events::MESSAGE_RECEIVED, $event);
         }
     }
 
