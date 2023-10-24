@@ -17,3 +17,5 @@ crashlytics.properties
 crashlytics-build.properties
 
 vendor
+
+composer.lock
