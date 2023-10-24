@@ -17,15 +17,26 @@
   ],
   "require": {
     "php": ">=7.4",
-    "symfony/symfony": ">=3.4.0"
+    "symfony/symfony": "^4.4.0 || ^5.4.0"
+  },
+  "require-dev": {
+    "rector/rector": "^0.18.5",
+    "friendsofphp/php-cs-fixer": "^3.35.1"
   },
   "autoload": {
-    "psr-0": {"TechData\\AS2SecureBundle": ""},
+    "psr-4": {
+      "TechData\\AS2SecureBundle\\": "src/"
+    },
     "classmap": [
-      "Models/Horde/",
-      "Models/Horde/MIME",
-      "Models/Mail"
+      "src/Models/Horde/",
+      "src/Models/Horde/MIME",
+      "src/Models/Mail"
     ]
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "TechData\\AS2SecureBundle\\Tests\\": "Tests/"
+    }
   },
   "minimum-stability": "dev",
   "target-dir": "TechData/AS2SecureBundle",
@@ -33,5 +44,11 @@
     "branch-alias": {
       "dev-master": "0.1-dev"
     }
+  },
+  "scripts": {
+    "rector": "rector process",
+    "rector:dry": "rector process --dry-run",
+    "cs-fix": "php-cs-fixer fix --verbose",
+    "cs-fix:dry": "php-cs-fixer fix --dry-run"
   }
 }
