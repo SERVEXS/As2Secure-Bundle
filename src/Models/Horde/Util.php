@@ -99,7 +99,7 @@ class Horde_Util
         }
 
         if ($delete) {
-            Horde_Util::deleteAtShutdown($tmp_file, true, $secure);
+            (new self())->deleteAtShutdown($tmp_file, true, $secure);
         }
 
         return $tmp_file;

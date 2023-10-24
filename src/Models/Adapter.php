@@ -31,6 +31,7 @@ namespace TechData\AS2SecureBundle\Models;
  *
  */
 
+use Exception;
 use TechData\AS2SecureBundle\Factories\Partner as PartnerFactory;
 
 class Adapter
@@ -112,7 +113,7 @@ class Adapter
             $dump = self::exec($command, true);
 
             return $dump[0];
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return false;
         }
     }
@@ -132,11 +133,11 @@ class Adapter
         $return_var = 0;
         try {
             exec($command, $output, $return_var);
-            $line = (isset($output[0]) ? $output[0] : 'Unexpected error in command line : ' . $command);
+            $line = ($output[0] ?? 'Unexpected error in command line : ' . $command);
             if ($return_var) {
-                throw new \Exception($line, (int) $return_var);
+                throw new Exception($line, (int) $return_var);
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             throw $e;
         }
 
@@ -185,7 +186,7 @@ class Adapter
             file_put_contents($output, $certs[$token]);
 
             return $output;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             throw $e;
         }
     }
@@ -200,7 +201,7 @@ class Adapter
     {
         if (is_null(self::$tmp_files)) {
             self::$tmp_files = [];
-            register_shutdown_function(['TechData\AS2SecureBundle\Models\Adapter', '_deleteTempFiles']);
+            register_shutdown_function([Adapter::class, '_deleteTempFiles']);
         }
 
         $dir = sys_get_temp_dir();
@@ -341,13 +342,13 @@ class Adapter
     {
         try {
             $this->partner_from = $this->partnerFactory->getPartner($partner_from);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             throw new AS2Exception('Sender AS2 id "' . $partner_from . '" is unknown.');
         }
 
         try {
             $this->partner_to = $this->partnerFactory->getPartner($partner_to);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             throw new AS2Exception('Receiver AS2 id "' . $partner_to . '" is unknown.');
         }
     }
@@ -361,7 +362,7 @@ class Adapter
     {
         try {
             if (!is_array($files) || !count($files)) {
-                throw new \Exception('No file provided.');
+                throw new Exception('No file provided.');
             }
 
             $args = '';
@@ -382,7 +383,7 @@ class Adapter
             $result = self::exec($command);
 
             return $output;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             throw $e;
         }
     }
@@ -429,7 +430,7 @@ class Adapter
             }
 
             return $files;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             throw $e;
         }
     }
@@ -467,7 +468,7 @@ class Adapter
             $result = self::exec($command);
 
             return $output;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             throw $e;
         }
     }
@@ -493,7 +494,7 @@ class Adapter
             $result = self::exec($command);
 
             return $output;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             throw $e;
         }
     }
@@ -511,7 +512,7 @@ class Adapter
     {
         try {
             if (!$this->partner_from->sec_pkcs12) {
-                throw new \Exception('Config error : PKCS12 (' . $this->partner_from->id . ')');
+                throw new Exception('Config error : PKCS12 (' . $this->partner_from->id . ')');
             }
 
             $password = ($this->partner_from->sec_pkcs12_password ? ' -password ' . escapeshellarg($this->partner_from->sec_pkcs12_password) : ' -nopassword');
@@ -537,7 +538,7 @@ class Adapter
             $result = self::exec($command);
 
             return $output;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             throw $e;
         }
     }
@@ -572,7 +573,7 @@ class Adapter
             $result = self::exec($command);
 
             return $output;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             throw $e;
         }
     }
@@ -595,7 +596,7 @@ class Adapter
             }
 
             if (!$certificate) {
-                throw new \Exception('Unable to extract private key from PKCS12 file. (' . $this->partner_to->sec_pkcs12 . ' - using:' . $this->partner_to->sec_pkcs12_password . ')');
+                throw new Exception('Unable to extract private key from PKCS12 file. (' . $this->partner_to->sec_pkcs12 . ' - using:' . $this->partner_to->sec_pkcs12_password . ')');
             }
 
             $output = self::getTempFilename();
@@ -605,7 +606,7 @@ class Adapter
                 ' -in ' . escapeshellarg($input) .
                 ' -out ' . escapeshellarg($output) .
                 ' -des3 ' . escapeshellarg($certificate);
-            $result = $this->exec($command);
+            $result = static::exec($command);
 
             $headers = 'Content-Type: application/pkcs7-mime; smime-type="enveloped-data"; name="smime.p7m"' . "\n" .
                 'Content-Disposition: attachment; filename="smime.p7m"' . "\n" .
@@ -620,7 +621,7 @@ class Adapter
             file_put_contents($output, $content);
 
             return $output;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             throw $e;
         }
     }
@@ -666,7 +667,7 @@ class Adapter
     public function decrypt($input)
     {
         try {
-            $private_key = self::getPrivateFromPKCS12($this->partner_to->sec_pkcs12, $this->partner_to->sec_pkcs12_password, '');
+            $private_key = self::getPrivateFromPKCS12($this->partner_to->sec_pkcs12, $this->partner_to->sec_pkcs12_password);
             if (!$private_key) {
                 throw new AS2Exception('Unable to extract private key from PKCS12 file. (' . $this->partner_to->sec_pkcs12 . ' - using:' . $this->partner_to->sec_pkcs12_password . ')');
             }
@@ -679,10 +680,10 @@ class Adapter
                 ' -inkey ' . escapeshellarg($private_key) .
                 ' -out ' . escapeshellarg($output);
 
-            $result = $this->exec($command);
+            $result = static::exec($command);
 
             return $output;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             throw $e;
         }
     }

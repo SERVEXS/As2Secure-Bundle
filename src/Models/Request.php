@@ -30,6 +30,9 @@ namespace TechData\AS2SecureBundle\Models;
  * @version 0.8.2
  *
  */
+
+use Exception;
+use Mail_mimeDecode;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use TechData\AS2SecureBundle\Events\Log;
 use TechData\AS2SecureBundle\Factories\MDN as MDNFactory;
@@ -41,20 +44,11 @@ class Request extends AbstractBase
     // Injected Services
     protected $request;
 
-    /**
-     * @var MDNFactory
-     */
-    private $mdnFactory;
+    private MDNFactory $mdnFactory;
 
-    /**
-     * @var MessageFactory
-     */
-    private $messageFactory;
+    private MessageFactory $messageFactory;
 
-    /**
-     * @var EventDispatcherInterface
-     */
-    private $eventDispatcher;
+    private EventDispatcherInterface $eventDispatcher;
 
     public function __construct(MDNFactory $mdnFactory, MessageFactory $messageFactory, EventDispatcherInterface $eventDispatcher)
     {
@@ -95,9 +89,9 @@ class Request extends AbstractBase
             $mimetype = trim(substr($mimetype, 0, $pos));
         }
 
-        if ($mimetype == 'application/pkcs7-mime' || $mimetype == 'application/x-pkcs7-mime') {
+        if ($mimetype === 'application/pkcs7-mime' || $mimetype === 'application/x-pkcs7-mime') {
             try {
-                $content = $this->getHeaders(true) . "\n\n";
+                $content = $this->getHeaders() . "\n\n";
                 $content .= file_get_contents($this->getPath());
 
                 $input = Adapter::getTempFilename();
@@ -106,10 +100,8 @@ class Request extends AbstractBase
 
                 // get input file and returns decrypted file
                 // throw an exception on error
-                $output = $this->adapter->decrypt($input);
-
-                return $output;
-            } catch (\Exception $e) {
+                return $this->adapter->decrypt($input);
+            } catch (Exception $e) {
                 throw $e;
             }
         }
@@ -120,7 +112,7 @@ class Request extends AbstractBase
     public function getObject()
     {
         // setup of full message
-        $content = $this->getHeaders(true) . "\n\n";
+        $content = $this->getHeaders() . "\n\n";
         $content .= file_get_contents($this->getPath());
         $input = Adapter::getTempFilename();
         file_put_contents($input, $content);
@@ -132,7 +124,7 @@ class Request extends AbstractBase
             'input' => false,
             // 'crlf'           => "\n"
         ];
-        $decoder = new \Mail_mimeDecode(file_get_contents($input));
+        $decoder = new Mail_mimeDecode(file_get_contents($input));
         $structure = $decoder->decode($params);
         $mimetype = $structure->ctype_primary . '/' . $structure->ctype_secondary;
 
@@ -152,10 +144,10 @@ class Request extends AbstractBase
                 $crypted = true;
 
                 // reload extracted content to get mimetype
-                $decoder = new \Mail_mimeDecode(file_get_contents($input));
+                $decoder = new Mail_mimeDecode(file_get_contents($input));
                 $structure = $decoder->decode($params);
                 $mimetype = $structure->ctype_primary . '/' . $structure->ctype_secondary;
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 throw new AS2Exception($e->getMessage(), 3);
             }
         }
@@ -176,12 +168,12 @@ class Request extends AbstractBase
                 $this->eventDispatcher->dispatch(new Log(Log::TYPE_INFO, 'The sender used the algorithm "' . $structure->ctype_parameters['micalg'] . '" to sign the message.'));
 
                 // reload extracted content to get mimetype
-                $decoder = new \Mail_mimeDecode(file_get_contents($input));
+                $decoder = new Mail_mimeDecode(file_get_contents($input));
                 $structure = $decoder->decode($params);
                 $mimetype = $structure->ctype_primary . '/' . $structure->ctype_secondary;
 
                 $this->eventDispatcher->dispatch(new Log(Log::TYPE_INFO, 'Using certificate "' . $this->getPartnerFrom() . '" to verify signature.'));
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 throw new AS2Exception($e->getMessage(), 5);
             }
         } else {
@@ -244,7 +236,7 @@ class Request extends AbstractBase
 
                     return $object;
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             throw new AS2Exception($e->getMessage(), 6);
         }
 

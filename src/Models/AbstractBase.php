@@ -200,11 +200,11 @@ abstract class AbstractBase
             } else {
                 $this->path = $data;
                 // filename
-                $this->filename = (isset($params['filename']) ? $params['filename'] : basename($this->path));
+                $this->filename = ($params['filename'] ?? basename($this->path));
             }
 
             // mimetype handle
-            $this->mimetype = (isset($params['mimetype']) ? $params['mimetype'] : Adapter::detectMimeType($this->path));
+            $this->mimetype = ($params['mimetype'] ?? Adapter::detectMimeType($this->path));
         }
 
         // partners

@@ -37,10 +37,7 @@ use TechData\AS2SecureBundle\Models\Horde\MIME\Horde_MIME_Part;
 class Message extends AbstractBase
 {
     // Injected Services
-    /**
-     * @var MDNFactory
-     */
-    private $mdnFactory;
+    private MDNFactory $mdnFactory;
 
     private $messageSubject;
 
@@ -211,7 +208,7 @@ class Message extends AbstractBase
                 $this->is_signed = true;
 
                 // echo file_get_contents($file);
-                $this->mic_checksum = $this->getMicChecksum($file);
+                $this->mic_checksum = $this->getMicChecksum();
             } catch (\Exception $e) {
                 throw $e;
 

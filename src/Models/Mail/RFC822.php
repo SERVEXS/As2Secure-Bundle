@@ -161,7 +161,7 @@ class Mail_RFC822
      *
      * @return object mail_RFC822 A new Mail_RFC822 object
      */
-    public function Mail_RFC822($address = null, $default_domain = null, $nest_groups = null, $validate = null, $limit = null)
+    public function __construct($address = null, $default_domain = null, $nest_groups = null, $validate = null, $limit = null)
     {
         if (isset($address)) {
             $this->address = $address;
@@ -737,7 +737,7 @@ class Mail_RFC822
 
         // Add the phrase (even if empty) and comments
         $mbox->personal = $phrase;
-        $mbox->comment = isset($comments) ? $comments : [];
+        $mbox->comment = $comments ?? [];
 
         if (isset($route_addr)) {
             $mbox->mailbox = $route_addr['local_part'];

@@ -190,7 +190,7 @@ class Mail_mimeDecode extends PEAR
     public function decode($params = null)
     {
         // determine if this method has been called statically
-        $isStatic = empty($this) || !is_a($this, __CLASS__);
+        $isStatic = empty($this) || !is_a($this, self::class);
 
         // Have we been called statically?
         // If so, create an object and pass details to that.
@@ -204,14 +204,10 @@ class Mail_mimeDecode extends PEAR
 
             // Called via an object
         } else {
-            $this->_include_bodies = isset($params['include_bodies']) ?
-                                 $params['include_bodies'] : false;
-            $this->_decode_bodies = isset($params['decode_bodies']) ?
-                                 $params['decode_bodies'] : false;
-            $this->_decode_headers = isset($params['decode_headers']) ?
-                                 $params['decode_headers'] : false;
-            $this->_rfc822_bodies = isset($params['rfc_822bodies']) ?
-                                 $params['rfc_822bodies'] : false;
+            $this->_include_bodies = $params['include_bodies'] ?? false;
+            $this->_decode_bodies = $params['decode_bodies'] ?? false;
+            $this->_decode_headers = $params['decode_headers'] ?? false;
+            $this->_rfc822_bodies = $params['rfc_822bodies'] ?? false;
 
             $structure = $this->_decode($this->_header, $this->_body);
             if ($structure === false) {
@@ -791,9 +787,9 @@ class Mail_mimeDecode extends PEAR
                     $c3 = (ord(substr($str[$i], $pos + 3, 1)) ^ 0x20);
                     $file .= chr(((($c0 - ' ') & 077) << 2) | ((($c1 - ' ') & 077) >> 4));
 
-                    $file .= chr(((($c1 - ' ') & 077) << 4) | ((($c2 - ' ') & 077) >> 2));
+                    $file .= chr(((($c1 - 0) & 077) << 4) | ((($c2 - 0) & 077) >> 2));
 
-                    $file .= chr(((($c2 - ' ') & 077) << 6) | (($c3 - ' ') & 077));
+                    $file .= chr(((($c2 - 0) & 077) << 6) | (($c3 - 0) & 077));
 
                     $pos += 4;
                     $d += 3;
@@ -960,7 +956,7 @@ class Mail_mimeDecode extends PEAR
         $crlf = "\r\n";
         $return = '';
 
-        $new_hdr_value = ($hdr_name != 'received') ? Mail_mimeDecode::_parseHeaderValue($hdr_value) : ['value' => $hdr_value];
+        $new_hdr_value = ($hdr_name !== 'received') ? Mail_mimeDecode::_parseHeaderValue($hdr_value) : ['value' => $hdr_value];
         $new_hdr_name = str_replace(' ', '-', ucwords(str_replace('-', ' ', $hdr_name)));
 
         // Sort out any parameters

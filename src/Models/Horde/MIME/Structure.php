@@ -60,8 +60,8 @@ class Horde_MIME_Structure
         static $message, $multipart;
 
         if (!isset($message)) {
-            $message = Horde_MIME::type('message');
-            $multipart = Horde_MIME::type('multipart');
+            $message = (new Horde_MIME())->type('message');
+            $multipart = (new Horde_MIME())->type('multipart');
         }
 
         $mime_part = new Horde_MIME_Part();
@@ -118,7 +118,7 @@ class Horde_MIME_Structure
     protected static function _setInfo($part, &$ob, $ref)
     {
         /* Store Content-type information. */
-        $primary_type = (isset($part->type)) ? Horde_MIME::type($part->type, MIME_STRING) : 'text';
+        $primary_type = (isset($part->type)) ? (new Horde_MIME())->type($part->type, MIME_STRING) : 'text';
         $sec_type = ($part->ifsubtype && $part->subtype) ? $part->subtype : 'x-unknown';
         $ob->setType($primary_type . '/' . $sec_type);
 
@@ -224,7 +224,7 @@ class Horde_MIME_Structure
             foreach ($attr_list as $attr => $val) {
                 $field = Horde_String::lower($attr);
                 if ($field === 'type') {
-                    if ($type = Horde_MIME::type($val)) {
+                    if ($type = (new Horde_MIME())->type($val)) {
                         $param_list['type'] = $type;
                     }
                 } else {
@@ -330,7 +330,7 @@ class Horde_MIME_Structure
             $ob->ctype_primary = 'application';
             $ob->ctype_secondary = 'octet-stream';
         }
-        $ob->type = intval(Horde_MIME::type($ob->ctype_primary));
+        $ob->type = (int)(new Horde_MIME())->type($ob->ctype_primary);
 
         /* Secondary content-type. */
         if (isset($ob->ctype_secondary)) {
@@ -342,7 +342,7 @@ class Horde_MIME_Structure
 
         /* Content transfer encoding. */
         if (isset($ob->headers['content-transfer-encoding'])) {
-            $ob->encoding = Horde_MIME::encoding($ob->headers['content-transfer-encoding']);
+            $ob->encoding = (new Horde_MIME())->encoding($ob->headers['content-transfer-encoding']);
         }
 
         /* Content-type and Disposition parameters. */
