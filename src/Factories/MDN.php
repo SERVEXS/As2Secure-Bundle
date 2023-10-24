@@ -21,11 +21,10 @@ class MDN extends AbstractFactory
 
     /**
      * @param null $data
-     * @param array $params
      *
      * @throws AS2Exception
      */
-    public function build($data = null, $params = []): MDNModel
+    public function build($data = null, array $params = []): MDNModel
     {
         $originalMessageId = '';
         if ($data instanceof Horde_MIME_Message) {

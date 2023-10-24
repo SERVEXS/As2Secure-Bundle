@@ -1,13 +1,13 @@
 <?php
 
 namespace TechData\AS2SecureBundle\Models;
+
 use TechData\AS2SecureBundle\Models\Horde\MIME\Horde_MIME_Part;
 
 /**
  * AS2Secure - PHP Lib for AS2 message encoding / decoding
  *
  * @author  Sebastien MALOT <contact@as2secure.com>
- *
  * @copyright Copyright (c) 2010, Sebastien MALOT
  *
  * Last release at : {@link http://www.as2secure.com}
@@ -26,26 +26,24 @@ use TechData\AS2SecureBundle\Models\Horde\MIME\Horde_MIME_Part;
  *
  * You should have received a copy of the GNU General Public License
  * along with AS2Secure.
- *
  * @license http://www.gnu.org/licenses/lgpl-3.0.html GNU General Public License
- * @version 0.9.0
  *
+ * @version 0.9.0
  */
-
 class MDN extends AbstractBase
 {
     /**
      * Refers to RFC 4130
      * http://rfclibrary.hosting.com/rfc/rfc4130/rfc4130-34.asp
      */
-    const ACTION_AUTO = 'automatic-action';
-    const ACTION_MANUAL = 'manual-action';
-    const SENDING_AUTO = 'MDN-sent-automatically';
-    const SENDING_MANUAL = 'MDN-sent-manually';
-    const TYPE_PROCESSED = 'processed';
-    const TYPE_FAILED = 'failed';
-    const MODIFIER_ERROR = 'error';
-    const MODIFIER_WARNING = 'warning';
+    public const ACTION_AUTO = 'automatic-action';
+    public const ACTION_MANUAL = 'manual-action';
+    public const SENDING_AUTO = 'MDN-sent-automatically';
+    public const SENDING_MANUAL = 'MDN-sent-manually';
+    public const TYPE_PROCESSED = 'processed';
+    public const TYPE_FAILED = 'failed';
+    public const MODIFIER_ERROR = 'error';
+    public const MODIFIER_WARNING = 'warning';
     /**
      * Human readable message
      */
@@ -62,26 +60,25 @@ class MDN extends AbstractBase
      *    encoded-message-digest         : (base64 format + digest-alg-id = "sha1" | "md5")
      *    reporting-ua                   : user-agent
      */
-    protected $attributes = null;
+    protected $attributes;
 
-    function __construct()
+    public function __construct()
     {
-
     }
 
-
-    public function initialize($data = null, $params = array())
+    public function initialize($data = null, $params = [])
     {
-
-        $this->attributes = new Header(array('action-mode' => self::ACTION_AUTO,
-            'sending-mode' => self::SENDING_AUTO));
+        $this->attributes = new Header(['action-mode' => self::ACTION_AUTO,
+            'sending-mode' => self::SENDING_AUTO]);
 
         // adapter
-        if (!($data instanceof AS2Exception) && $data instanceof Exception) $data = new AS2Exception($data->getMessage(), 6);
+        if (!($data instanceof AS2Exception) && $data instanceof \Exception) {
+            $data = new AS2Exception($data->getMessage(), 6);
+        }
         // full automatic handling
         if ($data instanceof AS2Exception) {
             $this->setMessage($data->getMessage());
-            //$this->setHeaders($data->getHeaders());
+            // $this->setHeaders($data->getHeaders());
             $this->setAttribute('disposition-type', $data->getLevel());
             $this->setAttribute('disposition-modifier', $data->getMessageShort());
 
@@ -96,10 +93,12 @@ class MDN extends AbstractBase
                 $this->partner_to = false;
             }
         } elseif ($data instanceof Request) { // parse response
-            $params = array('is_file' => false,
+            $params = [
+                'is_file' => false,
                 'mimetype' => 'multipart/report',
                 'partner_from' => $data->getPartnerFrom(),
-                'partner_to' => $data->getPartnerTo());
+                'partner_to' => $data->getPartnerTo(),
+            ];
             $this->initializeBase($data->getContent(), $params);
 
             // check requirements
@@ -222,29 +221,29 @@ class MDN extends AbstractBase
         $this->setMessageId(self::generateMessageID($this->getPartnerFrom()));
 
         // headers setup
-        $this->headers = new Header(array('AS2-Version' => '1.0',
+        $this->headers = new Header(['AS2-Version' => '1.0',
             'Message-ID' => $this->getMessageId(),
             'Mime-Version' => '1.0',
             'Server' => 'Dimass SupportPlaza AS2Secure',
             'User-Agent' => 'Dimass SupportPlaza AS2Secure',
-        ));
+        ]);
         $this->headers->addHeaders($container->header());
 
         if ($this->getPartnerFrom()) {
-            $headers_from = array(
+            $headers_from = [
                 'AS2-From' => '"' . $this->getPartnerFrom()->id . '"',
                 'From' => $this->getPartnerFrom()->email,
                 'Subject' => $this->getPartnerFrom()->mdn_subject,
                 'Disposition-Notification-To' => $this->getPartnerFrom()->send_url,
-            );
+            ];
             $this->headers->addHeaders($headers_from);
         }
 
         if ($this->getPartnerTo()) {
-            $headers_to = array(
+            $headers_to = [
                 'AS2-To' => '"' . $this->getPartnerTo()->id . '"',
                 'Recipient-Address' => $this->getPartnerTo()->send_url,
-            );
+            ];
             $this->headers->addHeaders($headers_to);
         }
 
@@ -264,7 +263,9 @@ class MDN extends AbstractBase
             $this->headers->addHeadersFromMessage($content);
 
             // TODO : replace with futur AS2MimePart to separate content from header
-            if (strpos($content, "\n\n") !== false) $content = substr($content, strpos($content, "\n\n") + 2);
+            if (strpos($content, "\n\n") !== false) {
+                $content = substr($content, strpos($content, "\n\n") + 2);
+            }
             file_put_contents($this->path, ltrim($content));
         } else {
             file_put_contents($this->path, $container->toCanonicalString(false));
@@ -286,17 +287,16 @@ class MDN extends AbstractBase
 
     /**
      * Decode MDN stored into path file and set attributes
-     *
      */
     public function decode()
     {
         // parse mime message
-        $params = array('include_bodies' => true,
+        $params = ['include_bodies' => true,
             'decode_headers' => true,
             'decode_bodies' => true,
             'input' => false,
-            'crlf' => "\n"
-        );
+            'crlf' => "\n",
+        ];
         $decoder = new \Mail_mimeDecode(file_get_contents($this->path));
         $structure = $decoder->decode($params);
 

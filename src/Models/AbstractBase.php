@@ -1,7 +1,8 @@
 <?php
+
 namespace TechData\AS2SecureBundle\Models;
 
-/**
+/*
  * AS2Secure - PHP Lib for AS2 message encoding / decoding
  *
  * @author  Sebastien MALOT <contact@as2secure.com>
@@ -29,40 +30,38 @@ namespace TechData\AS2SecureBundle\Models;
  * @version 0.9.0
  *
  */
-use TechData\AS2SecureBundle\Factories\Partner as PartnerFacotry;
 use TechData\AS2SecureBundle\Factories\Adapter as AdapterFactory;
+use TechData\AS2SecureBundle\Factories\Partner as PartnerFacotry;
 
 abstract class AbstractBase
 {
     // Injected Services
-    protected $adapter = null;
+    protected $adapter;
 
     // Properties
-    protected $filename = null;
-    protected $mimetype = null;
-    protected $path = null;
-    protected $files = array();
-    protected $headers = null;
-    protected $message_id = '';
-    protected $is_signed = false;
-    protected $is_crypted = false;
-    protected $partner_from = null;
-    protected $partner_to = null;
-    
-    /**
-     * @var PartnerFacotry
-     */
-    private $partnerFactory;
-    
-    /**
-     * @var AdapterFactory
-     */
-    private $adapterFactory;
-    
+    protected $filename;
+    protected $mimetype;
+    protected $path;
+    protected array $files = [];
+    protected $headers;
+    protected string $message_id = '';
+    protected bool $is_signed = false;
+    protected bool $is_crypted = false;
+    protected $partner_from;
+    protected $partner_to;
+
+    private PartnerFacotry $partnerFactory;
+
+    private AdapterFactory $adapterFactory;
+
     protected static function generateMessageID($partner)
     {
-        if ($partner instanceof Partner) $id = $partner->id;
-        else $id = 'unknown';
+        if ($partner instanceof Partner) {
+            $id = $partner->id;
+        } else {
+            $id = 'unknown';
+        }
+
         return '<' . uniqid('', true) . '@' . round(microtime(true)) . '_' . str_replace(' ', '', strtolower($id) . '_' . php_uname('n')) . '>';
     }
 
@@ -75,7 +74,6 @@ abstract class AbstractBase
     {
         $this->files[] = realpath($file);
     }
-
 
     // partner handle
 
@@ -113,9 +111,9 @@ abstract class AbstractBase
 
     public function getAuthentication()
     {
-        return array('method' => Partner::METHOD_NONE,
+        return ['method' => Partner::METHOD_NONE,
             'login' => '',
-            'password' => '');
+            'password' => ''];
     }
 
     public function getMessageId()
@@ -156,36 +154,34 @@ abstract class AbstractBase
     /**
      * @return PartnerFacotry
      */
-
     protected function getPartnerFactory()
     {
         return $this->partnerFactory;
     }
 
-    /**
-     * @param PartnerFacotry $partnerFactory
-     */
     public function setPartnerFactory(PartnerFacotry $partnerFactory)
     {
         $this->partnerFactory = $partnerFactory;
     }
-    
+
     /**
-     * 
      * @return AdapterFactory
      */
-    public function getAdapterFactory() {
+    public function getAdapterFactory()
+    {
         return $this->adapterFactory;
     }
 
-    public function setAdapterFactory(AdapterFactory $adapterFactory) {
+    public function setAdapterFactory(AdapterFactory $adapterFactory)
+    {
         $this->adapterFactory = $adapterFactory;
     }
 
-        final protected function initializeBase($data, $params = array())
+    final protected function initializeBase($data, $params = [])
     {
-        if (is_null($this->headers))
+        if (is_null($this->headers)) {
             $this->headers = new Header();
+        }
 
         if (is_array($data)) {
             $this->path = $data;
@@ -198,8 +194,9 @@ abstract class AbstractBase
                 $this->path = $file;
 
                 // filename
-                if (isset($params['filename']))
+                if (isset($params['filename'])) {
                     $this->filename = $params['filename'];
+                }
             } else {
                 $this->path = $data;
                 // filename
@@ -213,12 +210,14 @@ abstract class AbstractBase
         // partners
         if (isset($params['partner_from']) && $params['partner_from']) {
             $this->setPartnerFrom($params['partner_from']);
+        } else {
+            throw new AS2Exception('No AS2 From Partner specified.');
         }
-        else throw new AS2Exception('No AS2 From Partner specified.');
         if (isset($params['partner_to']) && $params['partner_to']) {
             $this->setPartnerTo($params['partner_to']);
+        } else {
+            throw new AS2Exception('NO AS2 To Partner specified.');
         }
-        else throw new AS2Exception('NO AS2 To Partner specified.');
 
         $this->adapter = $this->getAdapterFactory()->build($this->getPartnerFrom(), $this->getPartnerTo());
     }

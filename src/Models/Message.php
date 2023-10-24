@@ -1,6 +1,8 @@
 <?php
+
 namespace TechData\AS2SecureBundle\Models;
-/**
+
+/*
  * AS2Secure - PHP Lib for AS2 message encoding / decoding
  *
  * @author  Sebastien MALOT <contact@as2secure.com>
@@ -40,18 +42,16 @@ class Message extends AbstractBase
      */
     private $mdnFactory;
 
-    private $messageSubject = null;
-
+    private $messageSubject;
 
     protected $mic_checksum = false;
 
-    function __construct(MDNFactory $mdnFactory)
+    public function __construct(MDNFactory $mdnFactory)
     {
         $this->mdnFactory = $mdnFactory;
     }
 
-
-    public function initialize($data, $params = array())
+    public function initialize($data, $params = [])
     {
         $this->initializeBase($data, $params);
 
@@ -65,10 +65,11 @@ class Message extends AbstractBase
             $this->path = Adapter::getTempFilename();
             file_put_contents($this->path, $data->toString(true));
         } elseif ($data) {
-            if (!isset($params['is_file']) || $params['is_file'])
+            if (!isset($params['is_file']) || $params['is_file']) {
                 $this->addFile($data, '', '', true);
-            else
+            } else {
                 $this->addFile($data, '', '', false);
+            }
         }
 
         if (isset($params['mic'])) {
@@ -81,10 +82,10 @@ class Message extends AbstractBase
      *
      * @param string $data The content or the file
      * @param string $mimetype The mimetype of the message
-     * @param boolean $is_file If file
+     * @param bool $is_file If file
      * @param string $encoding The encoding to use for transfert
      *
-     * @return boolean
+     * @return bool
      */
     public function addFile($data, $mimetype = '', $filename = '', $is_file = true, $encoding = 'base64')
     {
@@ -94,15 +95,20 @@ class Message extends AbstractBase
             $data = $file;
             $is_file = true;
         } else {
-            if (!$filename) $filename = basename($data);
+            if (!$filename) {
+                $filename = basename($data);
+            }
         }
 
-        if (!$mimetype) $mimetype = Adapter::detectMimeType($data);
+        if (!$mimetype) {
+            $mimetype = Adapter::detectMimeType($data);
+        }
 
-        $this->files[] = array('path' => $data,
+        $this->files[] = ['path' => $data,
             'mimetype' => $mimetype,
             'filename' => $filename,
-            'encoding' => $encoding);
+            'encoding' => $encoding];
+
         return true;
     }
 
@@ -143,19 +149,19 @@ class Message extends AbstractBase
      */
     public function getAuthentication()
     {
-        return array('method' => $this->getPartnerTo()->send_credencial_method,
+        return ['method' => $this->getPartnerTo()->send_credencial_method,
             'login' => $this->getPartnerTo()->send_credencial_login,
-            'password' => $this->getPartnerTo()->send_credencial_password);
+            'password' => $this->getPartnerTo()->send_credencial_password];
     }
 
     /**
      * Build message and encode it (signing and/or crypting)
-     *
      */
     public function encode()
     {
-        if (!$this->getPartnerFrom() instanceof Partner || !$this->getPartnerTo() instanceof Partner)
+        if (!$this->getPartnerFrom() instanceof Partner || !$this->getPartnerTo() instanceof Partner) {
             throw new AS2Exception('Object not properly initialized');
+        }
 
         // initialisation
         $this->mic_checksum = false;
@@ -168,21 +174,23 @@ class Message extends AbstractBase
         // TODO : use adapter to build multipart file
         try {
             // managing all files (parts)
-            $parts = array();
+            $parts = [];
             foreach ($files as $file) {
                 $mime_part = new Horde_MIME_Part($file['mimetype']);
                 $mime_part->setContents(file_get_contents($file['path']));
                 $mime_part->setName($file['filename']);
-                if ($file['encoding'])
+                if ($file['encoding']) {
                     $mime_part->setTransferEncoding($file['encoding']);
+                }
 
                 $parts[] = $mime_part;
             }
             if (count($parts) > 1) {
                 // handling multipart file
                 $mime_part = new Horde_MIME_Part('multipart/mixed');
-                foreach ($parts as $part)
+                foreach ($parts as $part) {
                     $mime_part->addPart($part);
+                }
             } else {
                 // handling mono part (body)
                 $mime_part = $parts[0];
@@ -192,6 +200,7 @@ class Message extends AbstractBase
             file_put_contents($file, $mime_part->toString());
         } catch (\Exception $e) {
             throw $e;
+
             return false;
         }
 
@@ -201,12 +210,12 @@ class Message extends AbstractBase
                 $file = $this->adapter->sign($file, $this->getPartnerTo()->send_compress, $this->getPartnerTo()->send_encoding);
                 $this->is_signed = true;
 
-                //echo file_get_contents($file);
+                // echo file_get_contents($file);
                 $this->mic_checksum = $this->getMicChecksum($file);
             } catch (\Exception $e) {
                 throw $e;
-                return false;
 
+                return false;
             }
         }
 
@@ -217,6 +226,7 @@ class Message extends AbstractBase
                 $this->is_crypted = true;
             } catch (\Exception $e) {
                 throw $e;
+
                 return false;
             }
         }
@@ -235,7 +245,7 @@ class Message extends AbstractBase
             $messageSubject = $this->getPartnerFrom()->send_subject;
         }
 
-        $headers = array(
+        $headers = [
             'AS2-From' => $this->getPartnerFrom()->id,
             'AS2-To' => $this->getPartnerTo()->id,
             'AS2-Version' => '1.0',
@@ -246,7 +256,7 @@ class Message extends AbstractBase
             'Disposition-Notification-To' => $this->getPartnerFrom()->email,
             'Recipient-Address' => $this->getPartnerTo()->send_url,
             'User-Agent' => 'SupportPlaza AS2Secure HTTP Client',
-        );
+        ];
 
         if ($this->getPartnerTo()->mdn_signed) {
             $headers['Disposition-Notification-Options'] = 'signed-receipt-protocol=optional, pkcs7-signature; signed-receipt-micalg=optional, sha1';
@@ -262,7 +272,9 @@ class Message extends AbstractBase
         // eg : content-type
         $content = file_get_contents($this->path);
         $this->headers->addHeadersFromMessage($content);
-        if (strpos($content, "\n\n") !== false) $content = substr($content, strpos($content, "\n\n") + 2);
+        if (strpos($content, "\n\n") !== false) {
+            $content = substr($content, strpos($content, "\n\n") + 2);
+        }
         file_put_contents($this->path, $content);
 
         return true;
@@ -298,15 +310,17 @@ class Message extends AbstractBase
         $mdn->setAttribute('Original-Recipient', 'rfc822; "' . $partner . '"');
         $mdn->setAttribute('Final-Recipient', 'rfc822; "' . $partner . '"');
         $mdn->setAttribute('Original-Message-ID', $message_id);
-        if ($mic)
+        if ($mic) {
             $mdn->setAttribute('Received-Content-MIC', $mic);
+        }
 
         if (is_null($exception)) {
             $mdn->setMessage('The AS2 message has been received.');
             $mdn->setAttribute('Disposition-Type', 'processed');
         } else {
-            if (!$exception instanceof AS2Exception)
+            if (!$exception instanceof AS2Exception) {
                 $exception = new AS2Exception($exception->getMessage());
+            }
 
             $mdn->setMessage($exception->getMessage());
             $mdn->setAttribute('Disposition-Type', 'failure');

@@ -2,6 +2,7 @@
 
 namespace TechData\AS2SecureBundle\Services;
 
+use Exception;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\Request;
 use TechData\AS2SecureBundle\Events\IncomingAs2Request;
@@ -15,6 +16,7 @@ use TechData\AS2SecureBundle\Factories\Message as MessageFactory;
 use TechData\AS2SecureBundle\Factories\Partner as PartnerFactory;
 use TechData\AS2SecureBundle\Factories\Request as RequestFactory;
 use TechData\AS2SecureBundle\Interfaces\MessageSender;
+use TechData\AS2SecureBundle\Models\AS2Exception;
 use TechData\AS2SecureBundle\Models\Client;
 use TechData\AS2SecureBundle\Models\Header;
 use TechData\AS2SecureBundle\Models\MDN;
@@ -79,7 +81,7 @@ class AS2 implements MessageSender
         try {
             // the AS2 payload may be further encoded, try to decode it.
             $response_object->decode();
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             // there was an exception while attemptiong to decode, so the message was probably not encoded... ignore the exception
         }
         $files = $response_object->getFiles();
@@ -111,8 +113,8 @@ class AS2 implements MessageSender
      *
      * @return array
      *
-     * @throws \Exception
-     * @throws \TechData\AS2SecureBundle\Models\AS2Exception
+     * @throws Exception
+     * @throws AS2Exception
      */
     public function sendMessage($toPartner, $fromPartner, $messageContent, $messageSubject = null, $filename = null)
     {

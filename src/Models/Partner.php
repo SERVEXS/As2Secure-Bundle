@@ -1,10 +1,11 @@
 <?php
+
 namespace TechData\AS2SecureBundle\Models;
+
 /**
  * AS2Secure - PHP Lib for AS2 message encoding / decoding
  *
  * @author  Sebastien MALOT <contact@as2secure.com>
- *
  * @copyright Copyright (c) 2010, Sebastien MALOT
  *
  * Last release at : {@link http://www.as2secure.com}
@@ -23,51 +24,48 @@ namespace TechData\AS2SecureBundle\Models;
  *
  * You should have received a copy of the GNU General Public License
  * along with AS2Secure.
- *
  * @license http://www.gnu.org/licenses/lgpl-3.0.html GNU General Public License
- * @version 0.9.0
  *
+ * @version 0.9.0
  */
-
 class Partner
 {
     // general information
-    const METHOD_NONE = 'NONE';
-    const METHOD_AUTO = CURLAUTH_ANY;
-    const METHOD_BASIC = CURLAUTH_BASIC;
-    const METHOD_DIGECT = CURLAUTH_DIGEST;
-    const METHOD_NTLM = CURLAUTH_NTLM;
+    public const METHOD_NONE = 'NONE';
+    public const METHOD_AUTO = CURLAUTH_ANY;
+    public const METHOD_BASIC = CURLAUTH_BASIC;
+    public const METHOD_DIGECT = CURLAUTH_DIGEST;
+    public const METHOD_NTLM = CURLAUTH_NTLM;
 
     // security
-    const METHOD_GSS = CURLAUTH_GSSNEGOTIATE; // must contain private/certificate/ca chain
-    const ENCODING_BASE64 = 'base64';
-    const ENCODING_BINARY = 'binary'; // must contain certificate/ca chain
-    const ACK_SYNC = 'SYNC';
-    const ACK_ASYNC = 'ASYNC';
+    public const METHOD_GSS = CURLAUTH_GSSNEGOTIATE; // must contain private/certificate/ca chain
+    public const ENCODING_BASE64 = 'base64';
+    public const ENCODING_BINARY = 'binary'; // must contain certificate/ca chain
+    public const ACK_SYNC = 'SYNC';
+    public const ACK_ASYNC = 'ASYNC';
 
     // sending data
-    const SIGN_NONE = 'none';
-    const SIGN_SHA1 = 'sha1'; // full url including "http://" or "https://"
-    const SIGN_MD5 = 'md5';
-    const CRYPT_NONE = 'none';
-    const CRYPT_RC2_40 = 'rc2-40';
-    const CRYPT_RC2_64 = 'rc2-64';
-    const CRYPT_RC2_128 = 'rc2-128';
-    const CRYPT_DES = 'des';
+    public const SIGN_NONE = 'none';
+    public const SIGN_SHA1 = 'sha1'; // full url including "http://" or "https://"
+    public const SIGN_MD5 = 'md5';
+    public const CRYPT_NONE = 'none';
+    public const CRYPT_RC2_40 = 'rc2-40';
+    public const CRYPT_RC2_64 = 'rc2-64';
+    public const CRYPT_RC2_128 = 'rc2-128';
+    public const CRYPT_DES = 'des';
 
     // notification process
-    const CRYPT_3DES = 'des3';
-    const CRYPT_AES_128 = 'aes128';
-    const CRYPT_AES_192 = 'aes192';
-    const CRYPT_AES_256 = 'aes256';
-    protected static $stack = array();
+    public const CRYPT_3DES = 'des3';
+    public const CRYPT_AES_128 = 'aes128';
+    public const CRYPT_AES_192 = 'aes192';
+    public const CRYPT_AES_256 = 'aes256';
+    protected static $stack = [];
     protected $is_local = false;
     protected $name = '';
 
     // event trigger connector
     protected $id = '';
 
-    // 
     protected $email = '';
 
     // security methods
@@ -86,7 +84,6 @@ class Partner
     protected $send_subject = 'AS2 Message Subject';
     protected $send_content_type = 'application/EDI-Consent';
 
-    // 
     protected $send_credencial_method = self::METHOD_NONE;
     protected $send_credencial_login = '';
     protected $send_credencial_password = '';
@@ -111,13 +108,13 @@ class Partner
     {
         // set properties with data
         foreach ($data as $key => $value) {
-            if (!property_exists($this, $key) || is_null($value))
+            if (!property_exists($this, $key) || is_null($value)) {
                 continue;
+            }
 
             $this->$key = $value;
         }
     }
-
 
     /**
      * Return the list of available signatures
@@ -126,9 +123,9 @@ class Partner
      */
     public static function getAvailablesSignatures()
     {
-        return array('NONE' => self::SIGN_NONE,
+        return ['NONE' => self::SIGN_NONE,
             'SHA1' => self::SIGN_SHA1,
-        );
+        ];
     }
 
     /**
@@ -138,7 +135,7 @@ class Partner
      */
     public static function getAvailablesEncryptions()
     {
-        return array('NONE' => self::CRYPT_NONE,
+        return ['NONE' => self::CRYPT_NONE,
             'RC2_40' => self::CRYPT_RC2_40,
             'RC2_64' => self::CRYPT_RC2_64,
             'RC2_128' => self::CRYPT_RC2_128,
@@ -147,7 +144,7 @@ class Partner
             'AES_128' => self::CRYPT_AES_128,
             'AES_192' => self::CRYPT_AES_192,
             'AES_256' => self::CRYPT_AES_256,
-        );
+        ];
     }
 
     /**
@@ -159,10 +156,11 @@ class Partner
      */
     public function __get($key)
     {
-        if (property_exists($this, $key))
+        if (property_exists($this, $key)) {
             return $this->$key;
-        else
-            return null; // for strict processes : throw new Exception
+        }
+
+        return null; // for strict processes : throw new Exception
     }
 
     /**
@@ -170,18 +168,17 @@ class Partner
      *
      * @param key      Property name
      * @param value    New value to set
-     *
      */
     public function __set($key, $value)
     {
-        if (property_exists($this, $key))
+        if (property_exists($this, $key)) {
             $this->$key = $value;
+        }
         // for strict processes : throw new Exception if property doesn't exists
     }
 
     /**
      * Magic method
-     *
      */
     public function __toString()
     {

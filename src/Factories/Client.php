@@ -15,7 +15,7 @@ class Client
 {
     private Request $requestFactory;
 
-    function __construct(RequestFactory $requestFactory)
+    public function __construct(RequestFactory $requestFactory)
     {
         $this->requestFactory = $requestFactory;
     }
@@ -24,5 +24,4 @@ class Client
     {
         return new ClientModel($this->requestFactory);
     }
-
 }

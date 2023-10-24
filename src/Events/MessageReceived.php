@@ -24,8 +24,6 @@ class MessageReceived extends Event
 
     /**
      * @param string $messageId
-     *
-     * @return MessageReceived
      */
     public function setMessageId($messageId): MessageReceived
     {

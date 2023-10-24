@@ -2,12 +2,10 @@
 
 namespace TechData\AS2SecureBundle\Events;
 
-
 use Symfony\Contracts\EventDispatcher\Event;
 
 class MessageBeforeSent extends Event
 {
-
     private string $content;
 
     private string $messageId;

@@ -1,7 +1,8 @@
 <?php
+
 namespace TechData\AS2SecureBundle\Models;
 
-/**
+/*
  * AS2Secure - PHP Lib for AS2 message encoding / decoding
  *
  * @author  Sebastien MALOT <contact@as2secure.com>
@@ -33,31 +34,20 @@ namespace TechData\AS2SecureBundle\Models;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use TechData\AS2SecureBundle\Events\Log;
 use TechData\AS2SecureBundle\Events\MdnReceived;
-use TechData\AS2SecureBundle\Events\MessageSent;
-use TechData\AS2SecureBundle\Models\Client;
 use TechData\AS2SecureBundle\Factories\MDN as MdnFactory;
 use TechData\AS2SecureBundle\Models\Horde\MIME\Horde_MIME_Part;
 
-
 class Server
 {
-    const TYPE_MESSAGE = 'Message';
-    const TYPE_MDN = 'MDN';
+    public const TYPE_MESSAGE = 'Message';
 
-    /**
-     * @var EventDispatcherInterface
-     */
-    private $eventDispatcher;
+    public const TYPE_MDN = 'MDN';
 
-    /**
-     * @var MdnFactory
-     */
-    private $mdnFactory;
+    private EventDispatcherInterface $eventDispatcher;
 
-    /**
-     * @var Client
-     */
-    private $client;
+    private MdnFactory $mdnFactory;
+
+    private Client $client;
 
     public function __construct(EventDispatcherInterface $eventDispatcher, MdnFactory $mdnFactory, Client $client)
     {
@@ -85,13 +75,12 @@ class Server
         } catch (\Exception $e) {
             // get error while handling request
             $error = $e;
-            //throw $e;
+            // throw $e;
         }
 
         $mdn = null;
 
         if ($object instanceof Message || (!is_null($error) && !($object instanceof MDN))) {
-
             $object_type = self::TYPE_MESSAGE;
             $this->eventDispatcher->dispatch(new Log(Log::TYPE_INFO, 'Incoming transmission is a Message.'));
 
@@ -99,10 +88,20 @@ class Server
                 if (is_null($error)) {
                     $object->decode();
                     $files = $object->getFiles();
-                    $this->eventDispatcher->dispatch(new Log(Log::TYPE_INFO, count($files) . ' payload(s) found in incoming transmission.'));
+                    $this->eventDispatcher->dispatch(
+                        new Log(Log::TYPE_INFO, count($files) . ' payload(s) found in incoming transmission.')
+                    );
                     foreach ($files as $key => $file) {
                         $content = file_get_contents($file['path']);
-                        $this->eventDispatcher->dispatch(new Log(Log::TYPE_INFO, 'Payload #' . ($key + 1) . ' : ' . round(strlen($content) / 1024, 2) . ' KB / "' . $file['filename'] . '".'));
+                        $this->eventDispatcher->dispatch(
+                            new Log(
+                                Log::TYPE_INFO,
+                                'Payload #' . ($key + 1) . ' : ' . round(
+                                    strlen($content) / 1024,
+                                    2
+                                ) . ' KB / "' . $file['filename'] . '".'
+                            )
+                        );
                     }
 
                     $mdn = $object->generateMDN($error);
@@ -111,8 +110,10 @@ class Server
                     throw $error;
                 }
             } catch (\Exception $e) {
-                $params = array('partner_from' => $headers->getHeader('as2-from'),
-                    'partner_to' => $headers->getHeader('as2-to'));
+                $params = [
+                    'partner_from' => $headers->getHeader('as2-from'),
+                    'partner_to' => $headers->getHeader('as2-to'),
+                ];
                 $mdn = $this->mdnFactory->build($e, $params);
                 $mdn->setAttribute('original-message-id', $headers->getHeader('message-id'));
                 $mdn->encode();
@@ -129,8 +130,10 @@ class Server
 
         // build MDN
         if (!is_null($error) && $object_type == self::TYPE_MESSAGE) {
-            $params = array('partner_from' => $headers->getHeader('as2-from'),
-                'partner_to' => $headers->getHeader('as2-to'));
+            $params = [
+                'partner_from' => $headers->getHeader('as2-from'),
+                'partner_to' => $headers->getHeader('as2-to'),
+            ];
             $mdn = $this->mdnFactory->build($e, $params);
             $mdn->setAttribute('original-message-id', $headers->getHeader('message-id'));
             $mdn->encode();
@@ -146,7 +149,7 @@ class Server
 
                 // send headers
                 foreach ($mdn->getHeaders() as $key => $value) {
-                    $header = str_replace(array("\r", "\n", "\r\n"), '', $key . ': ' . $value);
+                    $header = str_replace(["\r", "\n", "\r\n"], '', $key . ': ' . $value);
                     header($header);
                 }
 
@@ -165,7 +168,9 @@ class Server
                 if ($result['info']['http_code'] == '200') {
                     $this->eventDispatcher->dispatch(new Log(Log::TYPE_INFO, 'An AS2 MDN has been sent.'));
                 } else {
-                    $this->eventDispatcher->dispatch(new Log(Log::TYPE_ERROR, 'An error occurs while sending MDN message : ' . $result['info']['http_code']));
+                    $this->eventDispatcher->dispatch(
+                        new Log(Log::TYPE_ERROR, 'An error occurs while sending MDN message : ' . $result['info']['http_code'])
+                    );
                 }
             }
         }

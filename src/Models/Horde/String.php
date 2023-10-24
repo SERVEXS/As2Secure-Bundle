@@ -1,5 +1,7 @@
 <?php
+
 namespace TechData\AS2SecureBundle\Models\Horde;
+
 /**
  * The Horde_String:: class provides static methods for charset and locale safe
  * string manipulation.
@@ -12,26 +14,25 @@ namespace TechData\AS2SecureBundle\Models\Horde;
  * did not receive this file, see http://www.fsf.org/copyleft/lgpl.html.
  *
  * @author  Jan Schneider <jan@horde.org>
+ *
  * @since   Horde 3.0
- * @package Horde_Util
  */
 class Horde_String
 {
-
     public static $charset = 'UTF-8';
 
     /**
      * Caches the result of extension_loaded() calls.
      *
-     * @param string $ext The extension name.
+     * @param string $ext the extension name
      *
-     * @return boolean  Is the extension loaded?
+     * @return bool  Is the extension loaded?
      *
      * @see Util::extensionExists()
      */
     public static function extensionExists($ext)
     {
-        static $cache = array();
+        static $cache = [];
 
         if (!isset($cache[$ext])) {
             $cache[$ext] = extension_loaded($ext);
@@ -44,13 +45,13 @@ class Horde_String
      * Sets a default charset that the Horde_String:: methods will use if none is
      * explicitly specified.
      *
-     * @param string $charset The charset to use as the default one.
+     * @param string $charset the charset to use as the default one
      */
     public static function setDefaultCharset($charset)
     {
         self::$charset = $charset;
-        if (Horde_String::extensionExists('mbstring') &&
-            function_exists('mb_regex_encoding')
+        if (Horde_String::extensionExists('mbstring')
+            && function_exists('mb_regex_encoding')
         ) {
             $old_error = error_reporting(0);
             mb_regex_encoding(Horde_String::_mbstringCharset($charset));
@@ -68,12 +69,12 @@ class Horde_String
      *
      * @param mixed $input The data to be converted. If $input is an an array,
      *                      the array's values get converted recursively.
-     * @param string $from The string's current charset.
+     * @param string $from the string's current charset
      * @param string $to The charset to convert the string to. If not
      *                      specified, the global variable
      *                      $_HORDE_STRING_CHARSET will be used.
      *
-     * @return mixed  The converted input data.
+     * @return mixed  the converted input data
      */
     public static function convertCharset($input, $from, $to = null)
     {
@@ -95,18 +96,20 @@ class Horde_String
         }
 
         if (is_array($input)) {
-            $tmp = array();
+            $tmp = [];
             reset($input);
-            while (list($key, $val) = each($input)) {
+            while ([$key, $val] = each($input)) {
                 $tmp[Horde_String::_convertCharset($key, $from, $to)] = Horde_String::convertCharset($val, $from, $to);
             }
+
             return $tmp;
         }
         if (is_object($input)) {
             $vars = get_object_vars($input);
-            while (list($key, $val) = each($vars)) {
+            while ([$key, $val] = each($vars)) {
                 $input->$key = Horde_String::convertCharset($val, $from, $to);
             }
+
             return $input;
         }
 
@@ -120,37 +123,35 @@ class Horde_String
     /**
      * Internal public function used to do charset conversion.
      *
-     * @access private
+     * @param string $input see Horde_String::convertCharset()
+     * @param string $from see Horde_String::convertCharset()
+     * @param string $to see Horde_String::convertCharset()
      *
-     * @param string $input See Horde_String::convertCharset().
-     * @param string $from See Horde_String::convertCharset().
-     * @param string $to See Horde_String::convertCharset().
-     *
-     * @return string  The converted string.
+     * @return string  the converted string
      */
     protected static function _convertCharset($input, $from, $to)
     {
         $output = '';
-        $from_check = (($from == 'iso-8859-1') || ($from == 'us-ascii'));
-        $to_check = (($to == 'iso-8859-1') || ($to == 'us-ascii'));
+        $from_check = (($from === 'iso-8859-1') || ($from === 'us-ascii'));
+        $to_check = (($to === 'iso-8859-1') || ($to === 'us-ascii'));
 
         /* Use utf8_[en|de]code() if possible and if the string isn't too
          * large (less than 16 MB = 16 * 1024 * 1024 = 16777216 bytes) - these
          * public functions use more memory. */
         if (strlen($input) < 16777216 || !(Horde_String::extensionExists('iconv') || Horde_String::extensionExists('mbstring'))) {
-            if ($from_check && ($to == 'utf-8')) {
+            if ($from_check && ($to === 'utf-8')) {
                 return utf8_encode($input);
             }
 
-            if (($from == 'utf-8') && $to_check) {
+            if (($from === 'utf-8') && $to_check) {
                 return utf8_decode($input);
             }
         }
 
         /* First try iconv with transliteration. */
-        if (($from != 'utf7-imap') &&
-            ($to != 'utf7-imap') &&
-            Horde_String::extensionExists('iconv')
+        if (($from !== 'utf7-imap')
+            && ($to !== 'utf7-imap')
+            && Horde_String::extensionExists('iconv')
         ) {
             /* We need to tack an extra character temporarily because of a bug
              * in iconv() if the last character is not a 7 bit ASCII
@@ -159,7 +160,9 @@ class Horde_String
             unset($php_errormsg);
             $output = @iconv($from, $to . '//TRANSLIT', $input . 'x');
             $output = (isset($php_errormsg)) ? false : Horde_String::substr($output, 0, -1, $to);
-            ini_set('track_errors', $oldTrackErrors);
+            if (PHP_MAJOR_VERSION < 7) {
+                ini_set('track_errors', $oldTrackErrors);
+            }
         }
 
         /* Next try mbstring. */
@@ -171,10 +174,10 @@ class Horde_String
 
         /* At last try imap_utf7_[en|de]code if appropriate. */
         if (!$output && Horde_String::extensionExists('imap')) {
-            if ($from_check && ($to == 'utf7-imap')) {
+            if ($from_check && ($to === 'utf7-imap')) {
                 return @imap_utf7_encode($input);
             }
-            if (($from == 'utf7-imap') && $to_check) {
+            if (($from === 'utf7-imap') && $to_check) {
                 return @imap_utf7_decode($input);
             }
         }
@@ -185,9 +188,9 @@ class Horde_String
     /**
      * Makes a string lowercase.
      *
-     * @param string $string The string to be converted.
-     * @param boolean $locale If true the string will be converted based on a
-     *                          given charset, locale independent else.
+     * @param string $string the string to be converted
+     * @param bool $locale if true the string will be converted based on a
+     *                          given charset, locale independent else
      * @param string $charset If $locale is true, the charset to use when
      *                          converting. If not provided the current charset.
      *
@@ -199,8 +202,8 @@ class Horde_String
 
         if ($locale) {
             /* The existence of mb_strtolower() depends on the platform. */
-            if (Horde_String::extensionExists('mbstring') &&
-                function_exists('mb_strtolower')
+            if (Horde_String::extensionExists('mbstring')
+                && function_exists('mb_strtolower')
             ) {
                 if (is_null($charset)) {
                     $charset = self::$charset;
@@ -212,11 +215,12 @@ class Horde_String
                     return $ret;
                 }
             }
+
             return strtolower($string);
         }
 
         if (!isset($lowers)) {
-            $lowers = array();
+            $lowers = [];
         }
         if (!isset($lowers[$string])) {
             $language = setlocale(LC_CTYPE, 0);
@@ -231,9 +235,9 @@ class Horde_String
     /**
      * Makes a string uppercase.
      *
-     * @param string $string The string to be converted.
-     * @param boolean $locale If true the string will be converted based on a
-     *                          given charset, locale independent else.
+     * @param string $string the string to be converted
+     * @param bool $locale if true the string will be converted based on a
+     *                          given charset, locale independent else
      * @param string $charset If $locale is true, the charset to use when
      *                          converting. If not provided the current charset.
      *
@@ -257,11 +261,12 @@ class Horde_String
                     return $ret;
                 }
             }
+
             return strtoupper($string);
         }
 
         if (!isset($uppers)) {
-            $uppers = array();
+            $uppers = [];
         }
         if (!isset($uppers[$string])) {
             $language = setlocale(LC_CTYPE, 0);
@@ -277,12 +282,12 @@ class Horde_String
      * Returns a string with the first letter capitalized if it is
      * alphabetic.
      *
-     * @param string $string The string to be capitalized.
-     * @param boolean $locale If true the string will be converted based on a
-     *                          given charset, locale independent else.
-     * @param string $charset The charset to use, defaults to current charset.
+     * @param string $string the string to be capitalized
+     * @param bool $locale if true the string will be converted based on a
+     *                          given charset, locale independent else
+     * @param string $charset the charset to use, defaults to current charset
      *
-     * @return string  The capitalized string.
+     * @return string  the capitalized string
      */
     public static function ucfirst($string, $locale = false, $charset = null)
     {
@@ -290,29 +295,30 @@ class Horde_String
             $first = Horde_String::substr($string, 0, 1, $charset);
             if (Horde_String::isAlpha($first, $charset)) {
                 $string = String . phpHorde_String::upper($first, true, $charset) . Horde_String::substr(
-                        $string,
-                        1,
-                        null,
-                        $charset
-                    );
+                    $string,
+                    1,
+                    null,
+                    $charset
+                );
             }
         } else {
             $string = String . phpHorde_String::upper(substr($string, 0, 1), false) . substr($string, 1);
         }
+
         return $string;
     }
 
     /**
      * Returns part of a string.
      *
-     * @param string $string The string to be converted.
-     * @param integer $start The part's start position, zero based.
-     * @param integer $length The part's length.
-     * @param string $charset The charset to use when calculating the part's
+     * @param string $string the string to be converted
+     * @param int $start the part's start position, zero based
+     * @param int $length the part's length
+     * @param string $charset the charset to use when calculating the part's
      *                         position and length, defaults to current
-     *                         charset.
+     *                         charset
      *
-     * @return string  The string's part.
+     * @return string  the string's part
      */
     public static function substr($string, $start, $length = null, $charset = null)
     {
@@ -359,11 +365,11 @@ class Horde_String
     /**
      * Returns the character (not byte) length of a string.
      *
-     * @param string $string The string to return the length of.
-     * @param string $charset The charset to use when calculating the string's
-     *                        length.
+     * @param string $string the string to return the length of
+     * @param string $charset the charset to use when calculating the string's
+     *                        length
      *
-     * @return string  The string's part.
+     * @return string  the string's part
      */
     public static function length($string, $charset = null)
     {
@@ -371,7 +377,7 @@ class Horde_String
             $charset = self::$charset;
         }
         $charset = Horde_String::lower($charset);
-        if ($charset == 'utf-8' || $charset == 'utf8') {
+        if ($charset === 'utf-8' || $charset === 'utf8') {
             return strlen(utf8_decode($string));
         }
         if (Horde_String::extensionExists('mbstring')) {
@@ -382,6 +388,7 @@ class Horde_String
                 return $ret;
             }
         }
+
         return strlen($string);
     }
 
@@ -389,14 +396,14 @@ class Horde_String
      * Returns the numeric position of the first occurrence of $needle
      * in the $haystack string.
      *
-     * @param string $haystack The string to search through.
-     * @param string $needle The string to search for.
-     * @param integer $offset Allows to specify which character in haystack
-     *                          to start searching.
-     * @param string $charset The charset to use when searching for the
-     *                          $needle string.
+     * @param string $haystack the string to search through
+     * @param string $needle the string to search for
+     * @param int $offset allows to specify which character in haystack
+     *                          to start searching
+     * @param string $charset the charset to use when searching for the
+     *                          $needle string
      *
-     * @return integer  The position of first occurrence.
+     * @return int  the position of first occurrence
      */
     public static function pos($haystack, $needle, $offset = 0, $charset = null)
     {
@@ -413,6 +420,7 @@ class Horde_String
                 return $ret;
             }
         }
+
         return strpos($haystack, $needle, $offset);
     }
 
@@ -421,19 +429,19 @@ class Horde_String
      *
      * This method behaves exactly like str_pad but is multibyte safe.
      *
-     * @param string $input The string to be padded.
-     * @param integer $length The length of the resulting string.
+     * @param string $input the string to be padded
+     * @param int $length the length of the resulting string
      * @param string $pad The string to pad the input string with. Must
      *                         be in the same charset like the input string.
      * @param const $type The padding type. One of STR_PAD_LEFT,
      *                         STR_PAD_RIGHT, or STR_PAD_BOTH.
-     * @param string $charset The charset of the input and the padding
-     *                         strings.
+     * @param string $charset the charset of the input and the padding
+     *                         strings
      *
-     * @return string  The padded string.
+     * @return string  the padded string
      */
     public static function pad($input, $length, $pad = ' ', $type = STR_PAD_RIGHT,
-                        $charset = null)
+        $charset = null)
     {
         $mb_length = Horde_String::length($input, $charset);
         $sb_length = strlen($input);
@@ -453,11 +461,11 @@ class Horde_String
             case STR_PAD_LEFT:
                 $left = $length - $mb_length;
                 $output = String . phpHorde_String::substr(
-                        str_repeat($pad, ceil($left / $pad_length)),
-                        0,
-                        $left,
-                        $charset
-                    ) . $input;
+                    str_repeat($pad, ceil($left / $pad_length)),
+                    0,
+                    $left,
+                    $charset
+                ) . $input;
                 break;
             case STR_PAD_BOTH:
                 $left = floor(($length - $mb_length) / 2);
@@ -480,22 +488,22 @@ class Horde_String
      *
      * @since Horde 3.2
      *
-     * @param string $string Horde_String containing the text to wrap.
-     * @param integer $width Wrap the string at this number of
-     *                               characters.
-     * @param string $break Character(s) to use when breaking lines.
-     * @param boolean $cut Whether to cut inside words if a line
-     *                               can't be wrapped.
-     * @param string $charset Character set to use when breaking lines.
-     * @param boolean $line_folding Whether to apply line folding rules per
+     * @param string $string horde_String containing the text to wrap
+     * @param int $width wrap the string at this number of
+     *                               characters
+     * @param string $break character(s) to use when breaking lines
+     * @param bool $cut whether to cut inside words if a line
+     *                               can't be wrapped
+     * @param string $charset character set to use when breaking lines
+     * @param bool $line_folding Whether to apply line folding rules per
      *                               RFC 822 or similar. The correct break
      *                               characters including leading whitespace
      *                               have to be specified too.
      *
-     * @return string  Horde_String containing the wrapped text.
+     * @return string  horde_String containing the wrapped text
      */
     public static function wordwrap($string, $width = 75, $break = "\n", $cut = false,
-                             $charset = null, $line_folding = false)
+        $charset = null, $line_folding = false)
     {
         /* Get the user's default character set if none passed in. */
         if (is_null($charset)) {
@@ -521,8 +529,8 @@ class Horde_String
             }
             // Wrap at the last colon or semicolon followed by a whitespace if
             // doing line folding.
-            if ($line_folding &&
-                preg_match('/^(.*?)(;|:)(\s+.*)$/u', $line, $match)
+            if ($line_folding
+                && preg_match('/^(.*?)(;|:)(\s+.*)$/u', $line, $match)
             ) {
                 $wrapped .= $match[1] . $match[2] . $break;
                 $string = $match[3] . $string;
@@ -554,21 +562,21 @@ class Horde_String
     /**
      * Wraps the text of a message.
      *
-     * @param string $text Horde_String containing the text to wrap.
-     * @param integer $length Wrap $text at this number of characters.
-     * @param string $break_char Character(s) to use when breaking lines.
-     * @param string $charset Character set to use when breaking lines.
-     * @param boolean $quote Ignore lines that are wrapped with the '>'
+     * @param string $text horde_String containing the text to wrap
+     * @param int $length wrap $text at this number of characters
+     * @param string $break_char character(s) to use when breaking lines
+     * @param string $charset character set to use when breaking lines
+     * @param bool $quote ignore lines that are wrapped with the '>'
      *                            character (RFC 2646)? If true, we don't
      *                            remove any padding whitespace at the end of
-     *                            the string.
+     *                            the string
      *
-     * @return string  Horde_String containing the wrapped text.
+     * @return string  horde_String containing the wrapped text
      */
     public static function wrap($text, $length = 80, $break_char = "\n", $charset = null,
-                         $quote = false)
+        $quote = false)
     {
-        $paragraphs = array();
+        $paragraphs = [];
 
         foreach (preg_split('/\r?\n/', $text) as $input) {
             if ($quote && (strpos($input, '>') === 0)) {
@@ -577,7 +585,7 @@ class Horde_String
                 /* We need to handle the Usenet-style signature line
                  * separately; since the space after the two dashes is
                  * REQUIRED, we don't want to trim the line. */
-                if ($input != '-- ') {
+                if ($input !== '-- ') {
                     $input = rtrim($input);
                 }
                 $line = Horde_String::wordwrap($input, $length, $break_char, false, $charset);
@@ -593,10 +601,10 @@ class Horde_String
      * Returns true if the every character in the parameter is an alphabetic
      * character.
      *
-     * @param $string   The string to test.
-     * @param $charset  The charset to use when testing the string.
+     * @param $string   The string to test
+     * @param $charset  The charset to use when testing the string
      *
-     * @return boolean  True if the parameter was alphabetic only.
+     * @return bool  true if the parameter was alphabetic only
      */
     public static function isAlpha($string, $charset = null)
     {
@@ -608,7 +616,7 @@ class Horde_String
         $old_charset = mb_regex_encoding();
         $old_error = error_reporting(0);
 
-        if ($charset != $old_charset) {
+        if ($charset !== $old_charset) {
             mb_regex_encoding($charset);
         }
         $alpha = !mb_ereg_match('[^[:alpha:]]', $string);
@@ -625,30 +633,30 @@ class Horde_String
      * Returns true if ever character in the parameter is a lowercase letter in
      * the current locale.
      *
-     * @param $string   The string to test.
-     * @param $charset  The charset to use when testing the string.
+     * @param $string   The string to test
+     * @param $charset  The charset to use when testing the string
      *
-     * @return boolean  True if the parameter was lowercase.
+     * @return bool  true if the parameter was lowercase
      */
     public static function isLower($string, $charset = null)
     {
-        return ((Horde_String::lower($string, true, $charset) === $string) &&
-            Horde_String::isAlpha($string, $charset));
+        return (Horde_String::lower($string, true, $charset) === $string)
+            && Horde_String::isAlpha($string, $charset);
     }
 
     /**
      * Returns true if every character in the parameter is an uppercase letter
      * in the current locale.
      *
-     * @param string $string The string to test.
-     * @param string $charset The charset to use when testing the string.
+     * @param string $string the string to test
+     * @param string $charset the charset to use when testing the string
      *
-     * @return boolean  True if the parameter was uppercase.
+     * @return bool  true if the parameter was uppercase
      */
     public static function isUpper($string, $charset = null)
     {
-        return ((Horde_String::upper($string, true, $charset) === $string) &&
-            Horde_String::isAlpha($string, $charset));
+        return (Horde_String::upper($string, true, $charset) === $string)
+            && Horde_String::isAlpha($string, $charset);
     }
 
     /**
@@ -656,12 +664,12 @@ class Horde_String
      *
      * @since Horde 3.1
      *
-     * @param string $text The text to search.
+     * @param string $text the text to search
      * @param array $regex The regular expressions to use, without perl
      *                         regex delimiters (e.g. '/' or '|').
-     * @param string $charset The character set of the text.
+     * @param string $charset the character set of the text
      *
-     * @return array  The matches array from the first regex that matches.
+     * @return array  the matches array from the first regex that matches
      */
     public static function regexMatch($text, $regex, $charset = null)
     {
@@ -670,7 +678,7 @@ class Horde_String
             $text = Horde_String::convertCharset($text, $charset, 'utf-8');
         }
 
-        $matches = array();
+        $matches = [];
         foreach ($regex as $val) {
             if (preg_match('/' . $val . '/u', $text, $matches)) {
                 break;
@@ -687,11 +695,9 @@ class Horde_String
     /**
      * Workaround charsets that don't work with mbstring public functions.
      *
-     * @access private
+     * @param string $charset the original charset
      *
-     * @param string $charset The original charset.
-     *
-     * @return string  The charset to use with mbstring public functions.
+     * @return string  the charset to use with mbstring public functions
      */
     protected static function _mbstringCharset($charset)
     {
@@ -700,11 +706,10 @@ class Horde_String
          * example, by various versions of Outlook to send Korean characters.
          * Use UHC (CP949) encoding instead. See, e.g.,
          * http://lists.w3.org/Archives/Public/ietf-charsets/2001AprJun/0030.html */
-        if (in_array(Horde_String::lower($charset), array('ks_c_5601-1987', 'ks_c_5601-1989'))) {
+        if (in_array(Horde_String::lower($charset), ['ks_c_5601-1987', 'ks_c_5601-1989'])) {
             $charset = 'UHC';
         }
 
         return $charset;
     }
-
 }

@@ -1,7 +1,8 @@
 <?php
+
 namespace TechData\AS2SecureBundle\Models;
 
-/**
+/*
  * AS2Secure - PHP Lib for AS2 message encoding / decoding
  *
  * @author  Sebastien MALOT <contact@as2secure.com>
@@ -33,13 +34,12 @@ use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use TechData\AS2SecureBundle\Events\Log;
 use TechData\AS2SecureBundle\Factories\MDN as MDNFactory;
 use TechData\AS2SecureBundle\Factories\Message as MessageFactory;
-use Mail_mimeDecode;
 use TechData\AS2SecureBundle\Models\Horde\MIME\Horde_MIME_Structure;
 
 class Request extends AbstractBase
 {
     // Injected Services
-    protected $request = null;
+    protected $request;
 
     /**
      * @var MDNFactory
@@ -56,7 +56,7 @@ class Request extends AbstractBase
      */
     private $eventDispatcher;
 
-    function __construct(MDNFactory $mdnFactory, MessageFactory $messageFactory, EventDispatcherInterface $eventDispatcher)
+    public function __construct(MDNFactory $mdnFactory, MessageFactory $messageFactory, EventDispatcherInterface $eventDispatcher)
     {
         $this->mdnFactory = $mdnFactory;
         $this->messageFactory = $messageFactory;
@@ -65,23 +65,22 @@ class Request extends AbstractBase
 
     public function initialize($content, $headers)
     {
-
         // build params to match parent::__construct
         $this->headers = $headers;
         $mimetype = $this->getHeader('content-type');
         if (($pos = strpos($mimetype, ';')) !== false) {
             $mimetype = substr($mimetype, 0, $pos);
         }
-        $params = array('partner_from' => $this->getHeader('as2-from'),
+        $params = ['partner_from' => $this->getHeader('as2-from'),
             'partner_to' => $this->getHeader('as2-to'),
             'mimetype' => $mimetype,
-            'is_file' => false);
+            'is_file' => false];
 
         // content is stored into new file
         $this->initializeBase($content, $params);
 
         $message_id = $this->getHeader('message-id');
-        $message_id = str_replace(array('<', '>'), '', $message_id);
+        $message_id = str_replace(['<', '>'], '', $message_id);
         $this->setMessageId($message_id);
     }
 
@@ -92,7 +91,9 @@ class Request extends AbstractBase
     public function decrypt()
     {
         $mimetype = $this->getHeader('content-type');
-        if (($pos = strpos($mimetype, ';')) !== false) $mimetype = trim(substr($mimetype, 0, $pos));
+        if (($pos = strpos($mimetype, ';')) !== false) {
+            $mimetype = trim(substr($mimetype, 0, $pos));
+        }
 
         if ($mimetype == 'application/pkcs7-mime' || $mimetype == 'application/x-pkcs7-mime') {
             try {
@@ -109,7 +110,6 @@ class Request extends AbstractBase
 
                 return $output;
             } catch (\Exception $e) {
-                //
                 throw $e;
             }
         }
@@ -126,12 +126,12 @@ class Request extends AbstractBase
         file_put_contents($input, $content);
 
         // setup of mailmime decoder
-        $params = array('include_bodies' => false,
+        $params = ['include_bodies' => false,
             'decode_headers' => true,
             'decode_bodies' => false,
             'input' => false,
-            //'crlf'           => "\n"
-        );
+            // 'crlf'           => "\n"
+        ];
         $decoder = new \Mail_mimeDecode(file_get_contents($input));
         $structure = $decoder->decode($params);
         $mimetype = $structure->ctype_primary . '/' . $structure->ctype_secondary;
@@ -226,20 +226,22 @@ class Request extends AbstractBase
 
             switch (strtolower($mimetype)) {
                 case 'multipart/report':
-                    $params = array('partner_from' => $this->getPartnerTo(),
+                    $params = ['partner_from' => $this->getPartnerTo(),
                         'partner_to' => $this->getPartnerFrom(),
                         'is_file' => false,
-                        'mic' => $mic);
+                        'mic' => $mic];
                     $object = $this->mdnFactory->build($mime_part, $params);
+
                     return $object;
 
                 default:
-                    $params = array('partner_from' => $this->getPartnerFrom(),
+                    $params = ['partner_from' => $this->getPartnerFrom(),
                         'partner_to' => $this->getPartnerTo(),
                         'is_file' => false,
-                        'mic' => $mic);
+                        'mic' => $mic];
                     $object = $this->messageFactory->build($mime_part, $params);
                     $object->setHeaders($this->getHeaders());
+
                     return $object;
             }
         } catch (\Exception $e) {

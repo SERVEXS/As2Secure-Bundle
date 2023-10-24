@@ -1,11 +1,13 @@
 <?php
+
 namespace TechData\AS2SecureBundle\Models\Horde;
-/**
+
+/*
  * Error code for a missing driver configuration.
  */
 define('HORDE_ERROR_DRIVER_CONFIG_MISSING', 1);
 
-/**
+/*
  * Error code for an incomplete driver configuration.
  */
 define('HORDE_ERROR_DRIVER_CONFIG', 2);
@@ -22,22 +24,22 @@ define('HORDE_ERROR_DRIVER_CONFIG', 2);
  *
  * @author  Chuck Hagenbuch <chuck@horde.org>
  * @author  Jon Parise <jon@horde.org>
+ *
  * @since   Horde 3.0
- * @package Horde_Horde_Util
  */
 class Horde_Util
 {
-    protected static $files = null;
-    protected static $securedel = null;
+    protected static $files;
+    protected static $securedel;
 
-    protected static $cache = array();
+    protected static $cache = [];
 
     /**
      * Returns an object's clone.
      *
-     * @param object &$obj The object to clone.
+     * @param object &$obj The object to clone
      *
-     * @return object  The cloned object.
+     * @return object  the cloned object
      */
     public function &cloneObject(&$obj)
     {
@@ -54,10 +56,12 @@ class Horde_Util
             $caller .= ' on line ' . $bt[0]['line'] . ' of ' . $bt[0]['file'];
 
             $ret = $obj;
+
             return $ret;
         }
 
         $ret = unserialize(serialize($obj));
+
         return $ret;
     }
 
@@ -65,11 +69,11 @@ class Horde_Util
      * Creates a temporary filename for the lifetime of the script, and
      * (optionally) register it to be deleted at request shutdown.
      *
-     * @param string $prefix Prefix to make the temporary name more
-     *                         recognizable.
-     * @param boolean $delete Delete the file at the end of the request?
-     * @param string $dir Directory to create the temporary file in.
-     * @param boolean $secure If deleting file, should we securely delete the
+     * @param string $prefix prefix to make the temporary name more
+     *                         recognizable
+     * @param bool $delete Delete the file at the end of the request?
+     * @param string $dir directory to create the temporary file in
+     * @param bool $secure If deleting file, should we securely delete the
      *                         file?
      *
      * @return string   Returns the full path-name to the temporary file.
@@ -97,6 +101,7 @@ class Horde_Util
         if ($delete) {
             Horde_Util::deleteAtShutdown($tmp_file, true, $secure);
         }
+
         return $tmp_file;
     }
 
@@ -117,21 +122,21 @@ class Horde_Util
      * The second parameter allows the unregistering of previously registered
      * elements.
      *
-     * @param string $filename The filename to be deleted at the end of the
-     *                           request.
-     * @param boolean $register If true, then register the element for
-     *                           deletion, otherwise, unregister it.
-     * @param boolean $secure If deleting file, should we securely delete
+     * @param string $filename the filename to be deleted at the end of the
+     *                           request
+     * @param bool $register if true, then register the element for
+     *                           deletion, otherwise, unregister it
+     * @param bool $secure If deleting file, should we securely delete
      *                           the file?
      */
     public function deleteAtShutdown($filename = false, $register = true,
-                                     $secure = false)
+        $secure = false)
     {
         /* Initialization of variables and shutdown public functions. */
         if (is_null(self::$files)) {
-            self::$files = array();
-            self::$securedel = array();
-            register_shutdown_function(array('Horde_Util', '_deleteAtShutdown'));
+            self::$files = [];
+            self::$securedel = [];
+            register_shutdown_function(['Horde_Util', '_deleteAtShutdown']);
         }
 
         if ($filename) {
@@ -158,8 +163,6 @@ class Horde_Util
      *
      * Contains code from gpg_public functions.php.
      * Copyright 2002-2003 Braverock Ventures
-     *
-     * @access private
      */
     public function _deleteAtShutdown()
     {
@@ -172,7 +175,7 @@ class Horde_Util
                     $filesize = filesize($file);
                     /* See http://www.cs.auckland.ac.nz/~pgut001/pubs/secure_del.html.
                      * We save the random overwrites for efficiency reasons. */
-                    $patterns = array("\x55", "\xaa", "\x92\x49\x24", "\x49\x24\x92", "\x24\x92\x49", "\x00", "\x11", "\x22", "\x33", "\x44", "\x55", "\x66", "\x77", "\x88", "\x99", "\xaa", "\xbb", "\xcc", "\xdd", "\xee", "\xff", "\x92\x49\x24", "\x49\x24\x92", "\x24\x92\x49", "\x6d\xb6\xdb", "\xb6\xdb\x6d", "\xdb\x6d\xb6");
+                    $patterns = ["\x55", "\xaa", "\x92\x49\x24", "\x49\x24\x92", "\x24\x92\x49", "\x00", "\x11", "\x22", "\x33", "\x44", "\x55", "\x66", "\x77", "\x88", "\x99", "\xaa", "\xbb", "\xcc", "\xdd", "\xee", "\xff", "\x92\x49\x24", "\x49\x24\x92", "\x24\x92\x49", "\x6d\xb6\xdb", "\xb6\xdb\x6d", "\xdb\x6d\xb6"];
                     $fp = fopen($file, 'r+');
                     foreach ($patterns as $pattern) {
                         $pattern = substr(str_repeat($pattern, floor($filesize / strlen($pattern)) + 1), 0, $filesize);
@@ -189,11 +192,9 @@ class Horde_Util
     /**
      * Caches the result of extension_loaded() calls.
      *
-     * @access private
+     * @param string $ext the extension name
      *
-     * @param string $ext The extension name.
-     *
-     * @return boolean  Is the extension loaded?
+     * @return bool  Is the extension loaded?
      */
     public function extensionExists($ext)
     {
@@ -204,4 +205,3 @@ class Horde_Util
         return $cache[$ext];
     }
 }
-

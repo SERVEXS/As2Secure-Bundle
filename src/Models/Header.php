@@ -1,6 +1,8 @@
 <?php
+
 namespace TechData\AS2SecureBundle\Models;
-/**
+
+/*
  * AS2Secure - PHP Lib for AS2 message encoding / decoding
  *
  * @author  Sebastien MALOT <contact@as2secure.com>
@@ -29,15 +31,14 @@ namespace TechData\AS2SecureBundle\Models;
  *
  */
 
-use Countable;
 use ArrayAccess;
 use Iterator;
 
-class Header implements Countable, ArrayAccess, Iterator
+class Header implements \Countable, \ArrayAccess, \Iterator
 {
-    protected $headers = array();
+    protected array $headers = [];
 
-    protected $_position = null;
+    protected $_position;
 
     public function __construct($data = null)
     {
@@ -53,9 +54,9 @@ class Header implements Countable, ArrayAccess, Iterator
      *
      * @param array $headers The new headers to use
      */
-    public function setHeaders($headers)
+    public function setHeaders($headers): void
     {
-        $this->headers = array();
+        $this->headers = [];
         $this->addHeaders($headers);
     }
 
@@ -65,20 +66,19 @@ class Header implements Countable, ArrayAccess, Iterator
      * @param string $key The name of the header
      * @param string $value The value of the header
      */
-    public function addHeader($key, $value)
+    public function addHeader($key, $value): void
     {
-        $this->headers[$key] = "$value";
+        $this->headers[$key] = (string) $value;
     }
 
     /**
      * Add a set of headers (or override currents)
-     *
-     * @param array $headers The new headers to use
      */
-    public function addHeaders($values)
+    public function addHeaders($values): void
     {
-        foreach ($values as $key => $value)
+        foreach ($values as $key => $value) {
             $this->addHeader($key, $value);
+        }
     }
 
     /**
@@ -86,12 +86,13 @@ class Header implements Countable, ArrayAccess, Iterator
      *
      * @param string $message The message content to use
      */
-    public function addHeadersFromMessage($message)
+    public function addHeadersFromMessage($message): void
     {
         $headers = $this->parseText($message);
         if (count($headers)) {
-            foreach ($headers as $key => $value)
+            foreach ($headers as $key => $value) {
                 $this->addHeader($key, $value);
+            }
         }
     }
 
@@ -100,7 +101,7 @@ class Header implements Countable, ArrayAccess, Iterator
      *
      * @param string $key The name of the header
      */
-    public function removeHeader($key)
+    public function removeHeader($key): void
     {
         unset($this->headers[$key]);
     }
@@ -110,7 +111,7 @@ class Header implements Countable, ArrayAccess, Iterator
      *
      * @return array   The headers, eg: array(name1 => value1, name2 => value2)
      */
-    public function getHeaders()
+    public function getHeaders(): array
     {
         return $this->headers;
     }
@@ -120,12 +121,13 @@ class Header implements Countable, ArrayAccess, Iterator
      *
      * @return array   The headers, eg: array(0 => name1:value1, 1 => name2:value2)
      */
-    public function toFormattedArray()
+    public function toFormattedArray(): array
     {
-        $tmp = array();
+        $tmp = [];
         foreach ($this->headers as $key => $val) {
             $tmp[] = $key . ': ' . $val;
         }
+
         return $tmp;
     }
 
@@ -149,10 +151,8 @@ class Header implements Countable, ArrayAccess, Iterator
 
     /**
      * Return the count of headers
-     *
-     * @return int
      */
-    public function count()
+    public function count(): int
     {
         return count($this->headers);
     }
@@ -161,12 +161,11 @@ class Header implements Countable, ArrayAccess, Iterator
      * Check if an header exists
      *
      * @param string $key The header to check existance
-     *
-     * @return boolean
      */
-    public function exists($key)
+    public function exists($key): bool
     {
         $tmp = array_change_key_case($this->headers);
+
         return array_key_exists(strtolower($key), $tmp);
     }
 
@@ -186,13 +185,10 @@ class Header implements Countable, ArrayAccess, Iterator
         return rtrim($ret);
     }
 
-    /***************************/
     /** ArrayAccess interface **/
-    /***************************/
-
     public function offsetExists($offset)
     {
-        return array_key_exists($this->headers, $offset);
+        return array_key_exists($offset, $this->headers);
     }
 
     public function offsetGet($offset)
@@ -210,10 +206,7 @@ class Header implements Countable, ArrayAccess, Iterator
         unset($this->headers[$offset]);
     }
 
-    /************************/
     /** Iterator interface **/
-    /************************/
-
     public function current()
     {
         return $this->headers[$this->key()];
@@ -222,12 +215,13 @@ class Header implements Countable, ArrayAccess, Iterator
     public function key()
     {
         $keys = array_keys($this->headers);
+
         return $keys[$this->_position];
     }
 
     public function next()
     {
-        $this->_position++;
+        ++$this->_position;
     }
 
     public function rewind()
@@ -237,31 +231,33 @@ class Header implements Countable, ArrayAccess, Iterator
 
     public function valid()
     {
-        return ($this->_position >= 0 && $this->_position < count($this->headers));
+        return $this->_position >= 0 && $this->_position < count($this->headers);
     }
 
     /**
      * Extract headers from mime message and return a new instance of Header
      *
      * @param string  The content to parse
-     *
-     * @return array
      */
-    protected function parseText($text)
+    protected function parseText($text): array
     {
-        if (strpos($text, "\n\n") !== false) $text = substr($text, 0, strpos($text, "\n\n"));
+        if (strpos($text, "\n\n") !== false) {
+            $text = substr($text, 0, strpos($text, "\n\n"));
+        }
         $text = rtrim($text) . "\n";
 
-        $matches = array();
+        $matches = [];
         preg_match_all('/(.*?):\s*(.*?\n(\s.*?\n)*)/', $text, $matches);
         if ($matches) {
-            foreach ($matches[2] as &$value) $value = trim(str_replace(array("\r", "\n"), ' ', $value));
+            foreach ($matches[2] as &$value) {
+                $value = trim(str_replace(["\r", "\n"], ' ', $value));
+            }
             unset($value);
-            if (count($matches[1]) && count($matches[1]) == count($matches[2])) {
+            if (count($matches[1]) && count($matches[1]) === count($matches[2])) {
                 return array_combine($matches[1], $matches[2]);
             }
         }
 
-        return array();
+        return [];
     }
 }

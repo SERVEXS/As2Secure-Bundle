@@ -1,6 +1,8 @@
 <?php
+
 namespace TechData\AS2SecureBundle\Models;
-/**
+
+/*
  * AS2Secure - PHP Lib for AS2 message encoding / decoding
  *
  * @author  Sebastien MALOT <contact@as2secure.com>
@@ -33,14 +35,11 @@ use TechData\AS2SecureBundle\Factories\Request as RequestFactory;
 
 class Client
 {
-    /**
-     * @var RequestFactory
-     */
-    private $requestFactory;
+    private RequestFactory $requestFactory;
 
-    protected $responseHeaders = [];
-    protected $responseContent = '';
-    protected $response_indice = 0;
+    protected array $responseHeaders = [];
+    protected string $responseContent = '';
+    protected int $responseIndice = 0;
 
     public function __construct(RequestFactory $requestFactory)
     {
@@ -52,9 +51,14 @@ class Client
      *
      * @param AbstractBase $request The request to send (instanceof : AS2Message | AS2MDN)
      *
-     * @return array
+     * @return array{
+     *     request: AbstractBase,
+     *     headers: array,
+     *     response: MDN|Message|null,
+     *     info: mixed
+     * }
      */
-    public function sendRequest($request)
+    public function sendRequest($request): array
     {
         if (!$request instanceof Message && !$request instanceof MDN) {
             throw new AS2Exception('Unexpected format');
@@ -64,9 +68,9 @@ class Client
         $headers = $request->getHeaders()->toFormattedArray();
 
         // initialize variables for building response headers with curl
-        $this->response_headers = [];
-        $this->response_content = '';
-        $this->response_indice = 0;
+        $this->responseHeaders = [];
+        $this->responseContent = '';
+        $this->responseIndice = 0;
 
         // send as2 message with headers
         $ch = curl_init();
@@ -83,12 +87,12 @@ class Client
         curl_setopt($ch, CURLOPT_POST, 1);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $request->getContent());
         curl_setopt($ch, CURLOPT_USERAGENT, 'SupportPlaza AS2Secure HTTP Client');
-        curl_setopt($ch, CURLOPT_HEADERFUNCTION, array($this, 'handleResponseHeader'));
+        curl_setopt($ch, CURLOPT_HEADERFUNCTION, [$this, 'handleResponseHeader']);
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 
         // authentication setup
         $auth = $request->getAuthentication();
-        if ($auth['method'] != Partner::METHOD_NONE) {
+        if ($auth['method'] !== Partner::METHOD_NONE) {
             curl_setopt($ch, CURLOPT_HTTPAUTH, $auth['method']);
             curl_setopt($ch, CURLOPT_USERPWD, urlencode($auth['login']) . ':' . urlencode($auth['password']));
         }
@@ -98,9 +102,9 @@ class Client
         $error = curl_error($ch);
         curl_close($ch);
 
-        $this->response_content = $response;
+        $this->responseContent = $response;
 
-        if ($info['http_code'] != 200 && $info['http_code'] != 202) {
+        if ($info['http_code'] !== 200 && $info['http_code'] !== 202) {
             throw new AS2Exception('HTTP Error Code : ' . $info['http_code'] . '(url:' . $request->getUrl() . ').');
         }
 
@@ -110,25 +114,25 @@ class Client
 
         $as2Response = null;
 
-        if ($request instanceof Message && $request->getPartnerTo()->mdn_request == Partner::ACK_SYNC) {
-            $tmpResponse = $this->requestFactory->build($response, new Header($this->response_headers[count($this->response_headers) - 1]));
+        if ($request instanceof Message && $request->getPartnerTo()->mdn_request === Partner::ACK_SYNC) {
+            $tmpResponse = $this->requestFactory->build($response, new Header($this->responseHeaders[count($this->responseHeaders) - 1]));
             $as2Response = $tmpResponse->getObject();
             $as2Response->decode();
         }
 
         return [
             'request' => $request,
-            'headers' => $this->response_headers[count($this->response_headers) - 1],
+            'headers' => $this->responseHeaders[count($this->responseHeaders) - 1],
             'response' => $as2Response,
-            'info' => $info
+            'info' => $info,
         ];
     }
 
     public function getLastResponse(): array
     {
         return [
-            'headers' => $this->response_headers[count($this->response_headers) - 1],
-            'content' => $this->response_content
+            'headers' => $this->responseHeaders[count($this->responseHeaders) - 1],
+            'content' => $this->responseContent,
         ];
     }
 
@@ -142,11 +146,13 @@ class Client
      */
     protected function handleResponseHeader($curl, $header)
     {
-        if (!trim($header) && isset($this->response_headers[$this->response_indice]) && count($this->response_headers[$this->response_indice])) {
-            $this->response_indice++;
+        if (!trim($header) && isset($this->responseHeaders[$this->responseIndice]) && count($this->responseHeaders[$this->responseIndice])) {
+            ++$this->responseIndice;
         } else {
             $pos = strpos($header, ':');
-            if ($pos !== false) $this->response_headers[$this->response_indice][trim(strtolower(substr($header, 0, $pos)))] = trim(substr($header, $pos + 1));
+            if ($pos !== false) {
+                $this->responseHeaders[$this->responseIndice][trim(strtolower(substr($header, 0, $pos)))] = trim(substr($header, $pos + 1));
+            }
         }
 
         return strlen($header);

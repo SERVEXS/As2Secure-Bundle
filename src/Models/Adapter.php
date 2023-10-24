@@ -1,7 +1,8 @@
 <?php
+
 namespace TechData\AS2SecureBundle\Models;
 
-/**
+/*
  * AS2Secure - PHP Lib for AS2 message encoding / decoding
  *
  * @author  Sebastien MALOT <contact@as2secure.com>
@@ -38,22 +39,20 @@ class Adapter
      * Allow to specify full path to main applications
      * for overriding PATH usage
      */
-    public static $ssl_adapter = 'AS2Secure.jar';
-    public static $ssl_openssl = 'openssl';
-    public static $javapath = 'java';
+    public static string $ssl_adapter = 'AS2Secure.jar';
+    public static string $ssl_openssl = 'openssl';
+    public static string $javapath = 'java';
     /**
      * Array to store temporary files created and scheduled to unlink
      */
-    protected static $tmp_files = null;
-    protected $partner_from = null;
-    protected $partner_to = null;
-    /**
-     * @var PartnerFactory
-     */
-    private $partnerFactory;
+    protected static $tmp_files;
+    protected $partner_from;
+    protected $partner_to;
+
+    private PartnerFactory $partnerFactory;
     private $AS2_DIR_BIN;
 
-    function __construct(PartnerFactory $partnerFactory, $AS2_DIR_BIN)
+    public function __construct(PartnerFactory $partnerFactory, $AS2_DIR_BIN)
     {
         $this->partnerFactory = $partnerFactory;
         $this->AS2_DIR_BIN = $AS2_DIR_BIN;
@@ -67,29 +66,31 @@ class Adapter
      *
      * @return string                The hash calculated
      */
-    public static function calculateMicChecksum($input, $algo = 'sha1')
+    public static function calculateMicChecksum($input, string $algo = 'sha1'): string
     {
-        if (strtolower($algo) == 'sha1')
+        if (strtolower($algo) === 'sha1') {
             return base64_encode(self::hex2bin(sha1_file($input))) . ', sha1';
-        else
-            return base64_encode(self::hex2bin(md5_file($input))) . ', md5';
+        }
+
+        return base64_encode(self::hex2bin(md5_file($input))) . ', md5';
     }
 
     /**
      * Convert a string from hexadecimal format to binary format
      *
-     * @param string $str The string in hexadecimal format.
+     * @param string $str the string in hexadecimal format
      *
-     * @return string       The string in binary format.
+     * @return string       the string in binary format
      */
     public static function hex2bin($str)
     {
         $bin = '';
         $i = 0;
         do {
-            $bin .= chr(hexdec($str{$i} . $str{($i + 1)}));
+            $bin .= chr(hexdec($str[$i] . $str[$i + 1]));
             $i += 2;
         } while ($i < strlen($str));
+
         return $bin;
     }
 
@@ -120,26 +121,29 @@ class Adapter
      * Execute a command line and throw Exception if an error appends
      *
      * @param string $command The command line to execute
-     * @param boolean $return_output True  to return all data from standard output
+     * @param bool $return_output True  to return all data from standard output
      *                                   False to return only the error code
      *
      * @return string    The error code or the content from standard output
      */
     public static function exec($command, $return_output = false)
     {
-        $output = array();
+        $output = [];
         $return_var = 0;
         try {
             exec($command, $output, $return_var);
             $line = (isset($output[0]) ? $output[0] : 'Unexpected error in command line : ' . $command);
-            if ($return_var) throw new \Exception($line, (int)$return_var);
+            if ($return_var) {
+                throw new \Exception($line, (int) $return_var);
+            }
         } catch (\Exception $e) {
             throw $e;
         }
 
-        if ($return_output)
+        if ($return_output) {
             return $output;
-        else
+        }
+
             return $return_var;
     }
 
@@ -170,7 +174,7 @@ class Adapter
         try {
             $pkcs12 = file_get_contents($input);
 
-            $certs = array();
+            $certs = [];
             openssl_pkcs12_read($pkcs12, $certs, $password);
 
             if (!isset($certs[$token])) {
@@ -195,25 +199,26 @@ class Adapter
     public static function getTempFilename()
     {
         if (is_null(self::$tmp_files)) {
-            self::$tmp_files = array();
-            register_shutdown_function(array('TechData\AS2SecureBundle\Models\Adapter', '_deleteTempFiles'));
+            self::$tmp_files = [];
+            register_shutdown_function(['TechData\AS2SecureBundle\Models\Adapter', '_deleteTempFiles']);
         }
 
         $dir = sys_get_temp_dir();
         $filename = tempnam($dir, 'as2file_');
         self::$tmp_files[] = $filename;
+
         return $filename;
     }
 
     /**
      * Garbage collector to delete temp files created with 'self::getTempFilename'
      * with shutdown function
-     *
      */
     public static function _deleteTempFiles()
     {
-        foreach (self::$tmp_files as $file)
+        foreach (self::$tmp_files as $file) {
             @unlink($file);
+        }
     }
 
     /**
@@ -226,29 +231,32 @@ class Adapter
     public static function detectMimeType($file)
     {
         // for old PHP (deprecated)
-        if (function_exists('mime_content_type'))
+        if (function_exists('mime_content_type')) {
             return mime_content_type($file);
+        }
 
         // for PHP > 5.3.0 / PECL FileInfo > 0.1.0
         if (function_exists('finfo_file')) {
             $finfo = finfo_open(FILEINFO_MIME);
             $mimetype = finfo_file($finfo, $file);
             finfo_close($finfo);
+
             return $mimetype;
         }
 
         $os = self::detectOS();
         // for Unix OS : command line
-        if ($os == 'UNIX') {
+        if ($os === 'UNIX') {
             $mimetype = trim(exec('file -b -i ' . escapeshellarg($file)));
             $parts = explode(';', $mimetype);
+
             return trim($parts[0]);
         }
 
         // fallback for Windows and Others OS
         // source code found at :
         // @link http://fr2.php.net/manual/en/function.mime-content-type.php#87856
-        $mime_types = array(
+        $mime_types = [
             'txt' => 'text/plain',
             'htm' => 'text/html',
             'html' => 'text/html',
@@ -301,27 +309,31 @@ class Adapter
             // open office
             'odt' => 'application/vnd.oasis.opendocument.text',
             'ods' => 'application/vnd.oasis.opendocument.spreadsheet',
-        );
+        ];
 
         $ext = strtolower(array_pop(explode('.', $file)));
         if (array_key_exists($ext, $mime_types)) {
             return $mime_types[$ext];
-        } else {
-            return 'application/octet-stream';
         }
+
+        return 'application/octet-stream';
     }
 
     /**
      * Determinate the Server OS
      *
      * @return string    The OS : WIN | UNIX | OTHER
-     *
      */
     public static function detectOS()
     {
         $os = php_uname('s');
-        if (stripos($os, 'win') !== false) return 'WIN';
-        if (stripos($os, 'linux') !== false || stripos($os, 'unix') !== false) return 'UNIX';
+        if (stripos($os, 'win') !== false) {
+            return 'WIN';
+        }
+        if (stripos($os, 'linux') !== false || stripos($os, 'unix') !== false) {
+            return 'UNIX';
+        }
+
         return 'OTHER';
     }
 
@@ -343,15 +355,14 @@ class Adapter
     /**
      * Generate a mime multipart file from files
      *
-     * @param array $input The list of extracted files (path / mimetype / filename)
-     *
      * @return string              The file generated
      */
     public function compose($files)
     {
         try {
-            if (!is_array($files) || !count($files))
+            if (!is_array($files) || !count($files)) {
                 throw new \Exception('No file provided.');
+            }
 
             $args = '';
             foreach ($files as $file) {
@@ -396,14 +407,18 @@ class Adapter
             $results = self::exec($command, true);
 
             // array returned
-            $files = array();
+            $files = [];
 
             foreach ($results as $tmp) {
                 $tmp = explode(';', $tmp);
-                if (count($tmp) <= 1) continue;
-                if (count($tmp) != 3) throw new AS2Exception('Unexpected data structure while extracting message.');
+                if (count($tmp) <= 1) {
+                    continue;
+                }
+                if (count($tmp) != 3) {
+                    throw new AS2Exception('Unexpected data structure while extracting message.');
+                }
 
-                $file = array();
+                $file = [];
                 $file['path'] = trim($tmp[0], '"');
                 $file['mimetype'] = trim($tmp[1], '"');
                 $file['filename'] = trim($tmp[2], '"');
@@ -421,13 +436,12 @@ class Adapter
 
     /**
      * Schedule file for deletion
-     *
      */
     public static function addTempFileForDelete($file)
     {
         if (is_null(self::$tmp_files)) {
-            self::$tmp_files = array();
-            register_shutdown_function(array('Adapter', '_deleteTempFiles'));
+            self::$tmp_files = [];
+            register_shutdown_function(['Adapter', '_deleteTempFiles']);
         }
         self::$tmp_files[] = $file;
     }
@@ -488,7 +502,7 @@ class Adapter
      * Sign a file which contains mime headers
      *
      * @param string $input The file to sign
-     * @param boolean $use_zlib Use Zlib to compress main container
+     * @param bool $use_zlib Use Zlib to compress main container
      * @param string $encoding Encoding to use for main container (base64 | binary)
      *
      * @return string                The content signed
@@ -496,13 +510,17 @@ class Adapter
     public function sign($input, $use_zlib = false, $encoding = 'base64')
     {
         try {
-            if (!$this->partner_from->sec_pkcs12)
+            if (!$this->partner_from->sec_pkcs12) {
                 throw new \Exception('Config error : PKCS12 (' . $this->partner_from->id . ')');
+            }
 
             $password = ($this->partner_from->sec_pkcs12_password ? ' -password ' . escapeshellarg($this->partner_from->sec_pkcs12_password) : ' -nopassword');
 
-            if ($use_zlib) $compress = ' -compress';
-            else $compress = '';
+            if ($use_zlib) {
+                $compress = ' -compress';
+            } else {
+                $compress = '';
+            }
 
             $output = self::getTempFilename();
 
@@ -534,11 +552,12 @@ class Adapter
     public function verify($input)
     {
         try {
-            if ($this->partner_from->sec_pkcs12)
+            if ($this->partner_from->sec_pkcs12) {
                 $security = ' -pkcs12 ' . escapeshellarg($this->partner_from->sec_pkcs12) .
                     ($this->partner_from->sec_pkcs12_password ? ' -password ' . escapeshellarg($this->partner_from->sec_pkcs12_password) : ' -nopassword');
-            else
+            } else {
                 $security = ' -cert ' . escapeshellarg($this->partner_from->sec_certificate);
+            }
 
             $output = self::getTempFilename();
 
@@ -569,12 +588,15 @@ class Adapter
     public function encrypt($input, $cypher = 'des3')
     {
         try {
-            if (!$this->partner_to->sec_certificate)
+            if (!$this->partner_to->sec_certificate) {
                 $certificate = self::getPublicFromPKCS12($this->partner_to->sec_pkcs12, $this->partner_to->sec_pkcs12_password);
-            else
+            } else {
                 $certificate = $this->partner_to->sec_certificate;
+            }
 
-            if (!$certificate) throw new \Exception('Unable to extract private key from PKCS12 file. (' . $this->partner_to->sec_pkcs12 . ' - using:' . $this->partner_to->sec_pkcs12_password . ')');
+            if (!$certificate) {
+                throw new \Exception('Unable to extract private key from PKCS12 file. (' . $this->partner_to->sec_pkcs12 . ' - using:' . $this->partner_to->sec_pkcs12_password . ')');
+            }
 
             $output = self::getTempFilename();
 
@@ -605,9 +627,6 @@ class Adapter
 
     /**
      * Fix the content type to match with RFC 2311
-     *
-     * @param string $file The file to fix
-     * @param string $type The type to choose to correct (crypt | sign)
      *
      * @return none
      */
@@ -648,8 +667,9 @@ class Adapter
     {
         try {
             $private_key = self::getPrivateFromPKCS12($this->partner_to->sec_pkcs12, $this->partner_to->sec_pkcs12_password, '');
-            if (!$private_key)
+            if (!$private_key) {
                 throw new AS2Exception('Unable to extract private key from PKCS12 file. (' . $this->partner_to->sec_pkcs12 . ' - using:' . $this->partner_to->sec_pkcs12_password . ')');
+            }
 
             $output = self::getTempFilename();
 
@@ -680,4 +700,3 @@ class Adapter
         return self::getDataFromPKCS12($input, 'pkey', $password);
     }
 }
-

@@ -16,6 +16,10 @@
     }
   ],
   "require": {
+    "ext-curl": "*",
+    "ext-iconv": "*",
+    "ext-imap": "*",
+    "ext-mbstring": "*",
     "php": ">=7.4",
     "symfony/symfony": "^4.4.0 || ^5.4.0"
   },
