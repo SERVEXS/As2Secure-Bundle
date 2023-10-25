@@ -20,7 +20,7 @@ class MDN extends AbstractFactory
     }
 
     /**
-     * @param null $data
+     * @param ?Horde_MIME_Message $data
      *
      * @throws AS2Exception
      */

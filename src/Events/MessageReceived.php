@@ -15,17 +15,14 @@ class MessageReceived extends Event
     private string $messageId;
 
     /**
-     * @return int
+     * @return string
      */
     public function getMessageId()
     {
         return $this->messageId;
     }
 
-    /**
-     * @param string $messageId
-     */
-    public function setMessageId($messageId): MessageReceived
+    public function setMessageId(string $messageId): MessageReceived
     {
         $this->messageId = $messageId;
 

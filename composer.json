@@ -17,9 +17,11 @@
   ],
   "require": {
     "ext-curl": "*",
+    "ext-fileinfo": "*",
     "ext-iconv": "*",
     "ext-imap": "*",
     "ext-mbstring": "*",
+    "ext-openssl": "*",
     "php": ">=7.4",
     "symfony/symfony": "^4.4.0 || ^5.4.0"
   },

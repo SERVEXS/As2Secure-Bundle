@@ -30,31 +30,41 @@ namespace TechData\AS2SecureBundle\Models;
  * @version 0.9.0
  *
  */
+
 use TechData\AS2SecureBundle\Factories\Adapter as AdapterFactory;
 use TechData\AS2SecureBundle\Factories\Partner as PartnerFacotry;
 
 abstract class AbstractBase
 {
     // Injected Services
-    protected $adapter;
+    protected Adapter $adapter;
 
     // Properties
-    protected $filename;
-    protected $mimetype;
+    protected ?string $filename;
+
+    protected string $mimetype;
+
     protected $path;
+
     protected array $files = [];
+
     protected $headers;
+
     protected string $message_id = '';
+
     protected bool $is_signed = false;
+
     protected bool $is_crypted = false;
-    protected $partner_from;
-    protected $partner_to;
+
+    protected ?Partner $partner_from = null;
+
+    protected ?Partner $partner_to = null;
 
     private PartnerFacotry $partnerFactory;
 
     private AdapterFactory $adapterFactory;
 
-    protected static function generateMessageID($partner)
+    protected static function generateMessageID($partner): string
     {
         if ($partner instanceof Partner) {
             $id = $partner->id;
@@ -62,7 +72,11 @@ abstract class AbstractBase
             $id = 'unknown';
         }
 
-        return '<' . uniqid('', true) . '@' . round(microtime(true)) . '_' . str_replace(' ', '', strtolower($id) . '_' . php_uname('n')) . '>';
+        return '<' . uniqid('', true) . '@' . round(microtime(true)) . '_' . str_replace(
+            ' ',
+            '',
+            strtolower($id) . '_' . php_uname('n')
+        ) . '>';
     }
 
     public function getPath()
@@ -70,14 +84,14 @@ abstract class AbstractBase
         return $this->path;
     }
 
-    public function addFile($file)
+    public function addFile($file): void
     {
         $this->files[] = realpath($file);
     }
 
     // partner handle
 
-    public function getFiles()
+    public function getFiles(): array
     {
         return $this->files;
     }
@@ -99,7 +113,7 @@ abstract class AbstractBase
 
     // message properties
 
-    public function setHeaders($headers)
+    public function setHeaders($headers): void
     {
         $this->headers = $headers;
     }
@@ -109,75 +123,76 @@ abstract class AbstractBase
         return $this->headers->getHeader($token);
     }
 
-    public function getAuthentication()
+    public function getAuthentication(): array
     {
-        return ['method' => Partner::METHOD_NONE,
+        return [
+            'method' => Partner::METHOD_NONE,
             'login' => '',
-            'password' => ''];
+            'password' => '',
+        ];
     }
 
-    public function getMessageId()
+    public function getMessageId(): string
     {
         return $this->message_id;
     }
 
-    public function setMessageId($id)
+    public function setMessageId($id): void
     {
         $this->message_id = $id;
     }
 
-    public function isCrypted()
+    public function isCrypted(): bool
     {
         return $this->is_crypted;
     }
 
-    public function isSigned()
+    public function isSigned(): bool
     {
         return $this->is_signed;
     }
 
-    public function encode()
+    public function encode(): bool
     {
         // TODO
     }
 
-    public function decode()
+    public function decode(): bool
     {
         // TODO
     }
 
-    public function getUrl()
+    public function getUrl(): string
     {
         // TODO
     }
 
-    /**
-     * @return PartnerFacotry
-     */
-    protected function getPartnerFactory()
+    protected function getPartnerFactory(): PartnerFacotry
     {
         return $this->partnerFactory;
     }
 
-    public function setPartnerFactory(PartnerFacotry $partnerFactory)
+    public function setPartnerFactory(PartnerFacotry $partnerFactory): void
     {
         $this->partnerFactory = $partnerFactory;
     }
 
-    /**
-     * @return AdapterFactory
-     */
-    public function getAdapterFactory()
+    public function getAdapterFactory(): AdapterFactory
     {
         return $this->adapterFactory;
     }
 
-    public function setAdapterFactory(AdapterFactory $adapterFactory)
+    public function setAdapterFactory(AdapterFactory $adapterFactory): void
     {
         $this->adapterFactory = $adapterFactory;
     }
 
-    final protected function initializeBase($data, $params = [])
+    /**
+     * @param array|string $data
+     *
+     * @throws AS2Exception
+     */
+    final protected function initializeBase($data, array $params = []): void
     {
         if (is_null($this->headers)) {
             $this->headers = new Header();
@@ -222,22 +237,22 @@ abstract class AbstractBase
         $this->adapter = $this->getAdapterFactory()->build($this->getPartnerFrom(), $this->getPartnerTo());
     }
 
-    public function getPartnerFrom()
+    public function getPartnerFrom(): ?Partner
     {
         return $this->partner_from;
     }
 
-    public function setPartnerFrom($partner_from)
+    public function setPartnerFrom($partner_from): void
     {
         $this->partner_from = $this->getPartnerFactory()->getPartner($partner_from);
     }
 
-    public function getPartnerTo()
+    public function getPartnerTo(): ?Partner
     {
         return $this->partner_to;
     }
 
-    public function setPartnerTo($partner_to)
+    public function setPartnerTo($partner_to): void
     {
         $this->partner_to = $this->getPartnerFactory()->getPartner($partner_to);
     }

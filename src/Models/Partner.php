@@ -32,35 +32,56 @@ class Partner
 {
     // general information
     public const METHOD_NONE = 'NONE';
+
     public const METHOD_AUTO = CURLAUTH_ANY;
+
     public const METHOD_BASIC = CURLAUTH_BASIC;
+
     public const METHOD_DIGECT = CURLAUTH_DIGEST;
+
     public const METHOD_NTLM = CURLAUTH_NTLM;
 
     // security
     public const METHOD_GSS = CURLAUTH_GSSNEGOTIATE; // must contain private/certificate/ca chain
+
     public const ENCODING_BASE64 = 'base64';
+
     public const ENCODING_BINARY = 'binary'; // must contain certificate/ca chain
+
     public const ACK_SYNC = 'SYNC';
+
     public const ACK_ASYNC = 'ASYNC';
 
     // sending data
     public const SIGN_NONE = 'none';
+
     public const SIGN_SHA1 = 'sha1'; // full url including "http://" or "https://"
+
     public const SIGN_MD5 = 'md5';
+
     public const CRYPT_NONE = 'none';
+
     public const CRYPT_RC2_40 = 'rc2-40';
+
     public const CRYPT_RC2_64 = 'rc2-64';
+
     public const CRYPT_RC2_128 = 'rc2-128';
+
     public const CRYPT_DES = 'des';
 
     // notification process
     public const CRYPT_3DES = 'des3';
+
     public const CRYPT_AES_128 = 'aes128';
+
     public const CRYPT_AES_192 = 'aes192';
+
     public const CRYPT_AES_256 = 'aes256';
+
     protected static $stack = [];
+
     protected $is_local = false;
+
     protected $name = '';
 
     // event trigger connector
@@ -70,39 +91,56 @@ class Partner
 
     // security methods
     protected $comment = '';
+
     protected $sec_pkcs12 = '';
+
     protected $sec_pkcs12_password = '';
+
     protected $sec_certificate = '';
+
     protected $sec_signature_algorithm = self::SIGN_SHA1;
+
     protected $sec_encrypt_algorithm = self::CRYPT_3DES;
 
     // transfert content encoding
     protected $send_compress = false;
+
     protected $send_url = '';
 
     // ack methods
     protected $send_subject = 'AS2 Message Subject';
+
     protected $send_content_type = 'application/EDI-Consent';
 
     protected $send_credencial_method = self::METHOD_NONE;
+
     protected $send_credencial_login = '';
+
     protected $send_credencial_password = '';
 
     // http://www.openssl.org/docs/apps/enc.html#SUPPORTED_CIPHERS
     protected $send_encoding = self::ENCODING_BASE64;
+
     protected $mdn_url = ''; // default
+
     protected $mdn_subject = 'AS2 MDN Subject';
+
     protected $mdn_request = self::ACK_SYNC;
+
     protected $mdn_signed = true;
+
     protected $mdn_credencial_method = self::METHOD_NONE;
+
     protected $mdn_credencial_login = '';
+
     protected $mdn_credencial_password = '';
+
     protected $connector_class = 'AS2Connector';
 
     /**
      * Restricted constructor
      *
-     * @param data       The data to set from
+     * @param array $data The data to set from
      */
     public function __construct($data)
     {
@@ -123,7 +161,8 @@ class Partner
      */
     public static function getAvailablesSignatures()
     {
-        return ['NONE' => self::SIGN_NONE,
+        return [
+            'NONE' => self::SIGN_NONE,
             'SHA1' => self::SIGN_SHA1,
         ];
     }
@@ -135,7 +174,8 @@ class Partner
      */
     public static function getAvailablesEncryptions()
     {
-        return ['NONE' => self::CRYPT_NONE,
+        return [
+            'NONE' => self::CRYPT_NONE,
             'RC2_40' => self::CRYPT_RC2_40,
             'RC2_64' => self::CRYPT_RC2_64,
             'RC2_128' => self::CRYPT_RC2_128,
@@ -150,9 +190,9 @@ class Partner
     /**
      * Magic getter
      *
-     * @param key    Property name
+     * @param string $key Property name
      *
-     * @return Return a property of this class
+     * @return mixed Return a property of this class
      */
     public function __get($key)
     {
@@ -166,22 +206,21 @@ class Partner
     /**
      * Magic setter
      *
-     * @param key      Property name
-     * @param value    New value to set
+     * @param string $key Property name
+     * @param mixed $value New value to set
      */
     public function __set($key, $value)
     {
-        if (property_exists($this, $key)) {
-            $this->$key = $value;
-        }
-        // for strict processes : throw new Exception if property doesn't exists
+        $this->$key = $value;
     }
 
-    /**
-     * Magic method
-     */
+    public function __isset($key)
+    {
+        return property_exists($this, $key);
+    }
+
     public function __toString()
     {
-        return $this->id;
+        return (string) $this->id;
     }
 }

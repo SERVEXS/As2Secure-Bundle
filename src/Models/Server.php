@@ -62,6 +62,7 @@ class Server
      * @param request (If not set, get data from standard input)
      *
      * @return request    The request handled
+     * @throws AS2Exception
      */
     public function handle(Request $request)
     {
@@ -129,7 +130,7 @@ class Server
         }
 
         // build MDN
-        if (!is_null($error) && $object_type == self::TYPE_MESSAGE) {
+        if (!is_null($error) && $object_type === self::TYPE_MESSAGE) {
             $params = [
                 'partner_from' => $headers->getHeader('as2-from'),
                 'partner_to' => $headers->getHeader('as2-to'),

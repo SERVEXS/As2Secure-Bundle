@@ -20,6 +20,7 @@ use TechData\AS2SecureBundle\Models\AS2Exception;
 use TechData\AS2SecureBundle\Models\Client;
 use TechData\AS2SecureBundle\Models\Header;
 use TechData\AS2SecureBundle\Models\MDN;
+use TechData\AS2SecureBundle\Models\Request as RequestModel;
 use TechData\AS2SecureBundle\Models\Server;
 
 class AS2 implements MessageSender
@@ -97,7 +98,7 @@ class AS2 implements MessageSender
         }
     }
 
-    private function requestToAS2Request(Request $request)
+    private function requestToAS2Request(Request $request): RequestModel
     {
         $flattenedHeaders = [];
         foreach ($request->headers as $key => $header) {

@@ -29,10 +29,17 @@ define('HORDE_ERROR_DRIVER_CONFIG', 2);
  */
 class Horde_Util
 {
+    /**
+     * @var array<string, bool>
+     */
     protected static $files;
-    protected static $securedel;
 
-    protected static $cache = [];
+    /**
+     * @var array<string, bool>
+     */
+    protected static array $securedel;
+
+    protected static array $cache = [];
 
     /**
      * Returns an object's clone.
@@ -55,14 +62,12 @@ class Horde_Util
             }
             $caller .= ' on line ' . $bt[0]['line'] . ' of ' . $bt[0]['file'];
 
-            $ret = $obj;
-
-            return $ret;
+            return $obj;
         }
 
-        $ret = unserialize(serialize($obj));
+        $unserialized = unserialize(serialize($obj));
 
-        return $ret;
+        return $unserialized;
     }
 
     /**
@@ -79,7 +84,7 @@ class Horde_Util
      * @return string   Returns the full path-name to the temporary file.
      *                  Returns false if a temp file could not be created.
      */
-    public function getTempFile($prefix = '', $delete = true, $dir = '', $secure = false)
+    public function getTempFile(string $prefix = '', bool $delete = true, string $dir = '', bool $secure = false)
     {
         if (empty($dir) || !is_dir($dir)) {
             $tmp_dir = sys_get_temp_dir();
@@ -122,16 +127,18 @@ class Horde_Util
      * The second parameter allows the unregistering of previously registered
      * elements.
      *
-     * @param string $filename the filename to be deleted at the end of the
+     * @param string|null $filename the filename to be deleted at the end of the
      *                           request
      * @param bool $register if true, then register the element for
      *                           deletion, otherwise, unregister it
      * @param bool $secure If deleting file, should we securely delete
      *                           the file?
      */
-    public function deleteAtShutdown($filename = false, $register = true,
-        $secure = false)
-    {
+    public function deleteAtShutdown(
+        ?string $filename = null,
+        bool $register = true,
+        bool $secure = false
+    ): void {
         /* Initialization of variables and shutdown public functions. */
         if (is_null(self::$files)) {
             self::$files = [];
@@ -146,8 +153,10 @@ class Horde_Util
                     self::$securedel[$filename] = true;
                 }
             } else {
-                unset(self::$files[$filename]);
-                unset(self::$securedel[$filename]);
+                unset(
+                    self::$files[$filename],
+                    self::$securedel[$filename]
+                );
             }
         }
     }
@@ -175,7 +184,35 @@ class Horde_Util
                     $filesize = filesize($file);
                     /* See http://www.cs.auckland.ac.nz/~pgut001/pubs/secure_del.html.
                      * We save the random overwrites for efficiency reasons. */
-                    $patterns = ["\x55", "\xaa", "\x92\x49\x24", "\x49\x24\x92", "\x24\x92\x49", "\x00", "\x11", "\x22", "\x33", "\x44", "\x55", "\x66", "\x77", "\x88", "\x99", "\xaa", "\xbb", "\xcc", "\xdd", "\xee", "\xff", "\x92\x49\x24", "\x49\x24\x92", "\x24\x92\x49", "\x6d\xb6\xdb", "\xb6\xdb\x6d", "\xdb\x6d\xb6"];
+                    $patterns = [
+                        "\x55",
+                        "\xaa",
+                        "\x92\x49\x24",
+                        "\x49\x24\x92",
+                        "\x24\x92\x49",
+                        "\x00",
+                        "\x11",
+                        "\x22",
+                        "\x33",
+                        "\x44",
+                        "\x55",
+                        "\x66",
+                        "\x77",
+                        "\x88",
+                        "\x99",
+                        "\xaa",
+                        "\xbb",
+                        "\xcc",
+                        "\xdd",
+                        "\xee",
+                        "\xff",
+                        "\x92\x49\x24",
+                        "\x49\x24\x92",
+                        "\x24\x92\x49",
+                        "\x6d\xb6\xdb",
+                        "\xb6\xdb\x6d",
+                        "\xdb\x6d\xb6",
+                    ];
                     $fp = fopen($file, 'r+');
                     foreach ($patterns as $pattern) {
                         $pattern = substr(str_repeat($pattern, floor($filesize / strlen($pattern)) + 1), 0, $filesize);
@@ -196,7 +233,7 @@ class Horde_Util
      *
      * @return bool  Is the extension loaded?
      */
-    public function extensionExists($ext)
+    public function extensionExists(string $ext): bool
     {
         if (!isset($cache[$ext])) {
             $cache[$ext] = extension_loaded($ext);

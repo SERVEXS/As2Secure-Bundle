@@ -20,26 +20,24 @@ class Horde_MIME_Message extends Horde_MIME_Part
 {
     /**
      * Has the message been parsed via buildMessage()?
-     *
-     * @var bool
      */
-    protected $_build = false;
+    protected bool $_build = false;
 
     /**
      * The server to default unqualified addresses to.
-     *
-     * @var string
      */
-    protected $_defaultServer;
+    protected string $_defaultServer;
 
     /**
      * Constructor - creates a new MIME email message.
      *
-     * @param string $defaultServer the server to default unqualified
+     * @param string|null $defaultServer the server to default unqualified
      *                               addresses to
      */
-    public function __construct($defaultServer = null)
+    public function __construct(?string $defaultServer = null)
     {
+        parent::__construct();
+
         if (is_null($defaultServer) && isset($_SERVER['SERVER_NAME'])) {
             $this->_defaultServer = $_SERVER['SERVER_NAME'];
         } else {
@@ -56,7 +54,7 @@ class Horde_MIME_Message extends Horde_MIME_Part
      * @param string $server the server to default unqualified
      *                               addresses to
      *
-     * @return MIME_Message  the new MIME_Message object
+     * @return Horde_MIME_Message  the new MIME_Message object
      */
     public function &convertMIMEPart(&$mime_part, $server = null)
     {
@@ -126,7 +124,7 @@ class Horde_MIME_Message extends Horde_MIME_Part
      *
      * @return string  the encoded, generated message
      */
-    public function toString($headers = false)
+    public function toString($headers = false): string
     {
         if ($this->_build) {
             return parent::toString($headers);
@@ -168,7 +166,7 @@ class Horde_MIME_Message extends Horde_MIME_Part
      *
      * @return array  an array of the MIME_Part subparts
      */
-    public function getParts()
+    public function getParts(): array
     {
         if ($this->_build) {
             return parent::getParts();
@@ -183,9 +181,8 @@ class Horde_MIME_Message extends Horde_MIME_Part
      * return a reference to make sure that the whole MIME_Message
      * object isn't accidentally modified.
      *
-     * @return MIME_Message  the base MIME_Part of the message
      */
-    public function getBasePart()
+    public function getBasePart(): self
     {
         $this->buildMessage();
 
@@ -197,7 +194,7 @@ class Horde_MIME_Message extends Horde_MIME_Part
      *
      * @param string $id the MIME_Part ID string
      *
-     * @return MIME_Part  the MIME_Part requested, or false if the part
+     * @return MIME_Part|Horde_MIME_Part  the MIME_Part requested, or false if the part
      *                    doesn't exist
      */
     public function &getPart($id)

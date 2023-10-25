@@ -32,29 +32,31 @@ namespace TechData\AS2SecureBundle\Models;
  */
 
 use ArrayAccess;
+use Countable;
 use Iterator;
 
-class Header implements \Countable, \ArrayAccess, \Iterator
+class Header implements Countable, ArrayAccess, Iterator
 {
     protected array $headers = [];
 
     protected $_position;
 
+    /**
+     * @param Header|array $data
+     */
     public function __construct($data = null)
     {
         if (is_array($data)) {
             $this->headers = $data;
-        } elseif ($data instanceof Header) {
+        } elseif ($data instanceof self) {
             $this->headers = $data->getHeaders();
         }
     }
 
     /**
      * Reset all current headers with new values
-     *
-     * @param array $headers The new headers to use
      */
-    public function setHeaders($headers): void
+    public function setHeaders(array $headers): void
     {
         $this->headers = [];
         $this->addHeaders($headers);
@@ -237,9 +239,9 @@ class Header implements \Countable, \ArrayAccess, \Iterator
     /**
      * Extract headers from mime message and return a new instance of Header
      *
-     * @param string  The content to parse
+     * @param string $text  The content to parse
      */
-    protected function parseText($text): array
+    protected function parseText(string $text): array
     {
         if (strpos($text, "\n\n") !== false) {
             $text = substr($text, 0, strpos($text, "\n\n"));

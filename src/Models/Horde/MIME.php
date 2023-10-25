@@ -137,7 +137,7 @@ class Horde_MIME
         $line = '';
 
         /* Return if nothing needs to be encoded. */
-        if (($charset == 'us-ascii') || !Horde_MIME::is8bit($text, $charset)) {
+        if (($charset === 'us-ascii') || !self::is8bit($text, $charset)) {
             return $text;
         }
 
@@ -145,11 +145,11 @@ class Horde_MIME
         $size = preg_match_all('/([^\s]+)([\s]*)/', $text, $matches, PREG_SET_ORDER);
 
         foreach ($matches as $key => $val) {
-            if (Horde_MIME::is8bit($val[1], $charset)) {
+            if (self::is8bit($val[1], $charset)) {
                 if ((($key + 1) < $size)
-                    && Horde_MIME::is8bit($matches[$key + 1][1], $charset)
+                    && self::is8bit($matches[$key + 1][1], $charset)
                 ) {
-                    $line .= Horde_MIME::_encode($val[1] . $val[2], $charset) . ' MIME.php';
+                    $line .= self::_encode($val[1] . $val[2], $charset) . ' MIME.php';
                 } else {
                     $line .= MIME . phpHorde_MIME::_encode($val[1], $charset) . $val[2];
                 }
@@ -176,7 +176,7 @@ class Horde_MIME
         $c_size = strlen($charset) + 7;
 
         if ((strlen($encoded) + $c_size) > 75) {
-            $parts = explode("\r\n", rtrim(chunk_split($encoded, intval((75 - $c_size) / 4) * 4)));
+            $parts = explode("\r\n", rtrim(chunk_split($encoded, (int) ((75 - $c_size) / 4) * 4)));
         } else {
             $parts[] = $encoded;
         }
@@ -216,12 +216,12 @@ class Horde_MIME
             $char = $text[$i];
 
             /* If we have reached the end of the line, reset counters. */
-            if ($char == "\n") {
+            if ($char === "\n") {
                 $output .= $eol;
                 $curr_length = 0;
                 continue;
             }
-            if ($char == "\r") {
+            if ($char === "\r") {
                 continue;
             }
 
@@ -233,7 +233,7 @@ class Horde_MIME
              * encoded. */
             if ((($ascii === 32)
                     && ($i + 1 != $length)
-                    && (($text[$i + 1] == "\n") || ($text[$i + 1] == "\r")))
+                    && (($text[$i + 1] === "\n") || ($text[$i + 1] === "\r")))
                 || (($ascii < 32) || ($ascii > 126) || ($ascii === 61))
             ) {
                 $char_len = 3;
@@ -258,14 +258,14 @@ class Horde_MIME
      * This differs from MIME::encode() because it keeps email addresses legal,
      * only encoding the personal information.
      *
-     * @param string $addresses the email addresses to encode
-     * @param string $charset the character set of the text
-     * @param string $defserver the default domain to append to mailboxes
+     * @param string|array $addresses the email addresses to encode
+     * @param string|null $charset the character set of the text
+     * @param string|null $defserver the default domain to append to mailboxes
      *
      * @return string  The text, encoded only if it contains non-ascii
      *                 characters
      */
-    public static function encodeAddress($addresses, $charset = null, $defserver = null)
+    public static function encodeAddress($addresses, ?string $charset = null, ?string $defserver = null): string
     {
         if (is_array($addresses)) {
             $addr_arr = $addresses;
@@ -285,19 +285,18 @@ class Horde_MIME
             foreach ($addr_arr as $addr) {
                 // Check for groups.
                 if (!empty($addr->groupname)) {
-                    $text .= Horde_MIME::encode($addr->groupname, $charset) . ': ' . Horde_MIME::encodeAddress($addr->addresses) . '; ';
+                    $text .= self::encode($addr->groupname, $charset) . ': ' . self::encodeAddress($addr->addresses) . '; ';
                 } else {
                     if (empty($addr->personal)) {
                         $personal = '';
                     } else {
-                        if ((substr($addr->personal, 0, 1) === '"')
-                            && (substr($addr->personal, -1) === '"')
-                        ) {
+                        if (str_starts_with($addr->personal, '"') && str_ends_with($addr->personal, '"')) {
                             $addr->personal = stripslashes(substr($addr->personal, 1, -1));
                         }
-                        $personal = Horde_MIME::encode($addr->personal, $charset);
+                        $personal = self::encode($addr->personal, $charset);
                     }
-                    $text .= Horde_MIME::trimEmailAddress(Horde_MIME::rfc822WriteAddress($addr->mailbox, $addr->host, $personal)) . ', ';
+                    $text .= (new self())->trimEmailAddress(
+                        (new self())->rfc822WriteAddress($addr->mailbox, $addr->host, $personal)) . ', ';
                 }
             }
         }
@@ -309,12 +308,12 @@ class Horde_MIME
      * Decodes an RFC 2047-encoded string.
      *
      * @param string $string the text to decode
-     * @param string $to_charset the charset that the text should be decoded
+     * @param string|null $to_charset the charset that the text should be decoded
      *                            to
      *
      * @return string  the decoded text
      */
-    public static function decode($string, $to_charset = null)
+    public static function decode(string $string, ?string $to_charset = null): string
     {
         if (($pos = strpos($string, '=?')) === false) {
             return $string;
@@ -374,7 +373,7 @@ class Horde_MIME
                 break;
         }
 
-        return $preceding . $decoded . Horde_MIME::decode($rest, $to_charset);
+        return $preceding . $decoded . self::decode($rest, $to_charset);
     }
 
     /**
@@ -389,12 +388,12 @@ class Horde_MIME
     public static function decodeAddrString($string, $to_charset = null)
     {
         $addr_list = [];
-        foreach (Horde_MIME::parseAddressList($string) as $ob) {
-            $ob->personal = isset($ob->personal) ? Horde_MIME::decode($ob->personal, $to_charset) : '';
+        foreach ((new self())->parseAddressList($string) as $ob) {
+            $ob->personal = isset($ob->personal) ? self::decode($ob->personal, $to_charset) : '';
             $addr_list[] = $ob;
         }
 
-        return Horde_MIME::addrArray2String($addr_list);
+        return (new self())->addrArray2String($addr_list);
     }
 
     /**
@@ -404,15 +403,13 @@ class Horde_MIME
      * @param string $string the string to encode
      * @param string $charset the charset the text should be encoded with
      * @param string $lang the language to use when encoding
-     *
-     * @return array  the encoded parameter string
      */
-    public static function encodeRFC2231($name, $string, $charset, $lang = null)
+    public static function encodeRFC2231($name, $string, $charset, $lang = null): string
     {
         $encode = $wrap = false;
         $output = [];
 
-        if (Horde_MIME::is8bit($string, $charset)) {
+        if (self::is8bit($string, $charset)) {
             $string = Horde_String::lower($charset) . '\MIME.php' . (($lang === null) ? '' : Horde_String::lower($lang)) . '\'' . rawurlencode($string);
             $encode = true;
         }
@@ -515,11 +512,11 @@ class Horde_MIME
      *
      * @return string  the trimmed address
      */
-    public function trimEmailAddress($address)
+    public function trimEmailAddress($address): string
     {
         $address = trim($address);
 
-        if ((substr($address, 0, 1) === '<') && (substr($address, -1) === '>')) {
+        if (str_starts_with($address, '<') && str_ends_with($address, '>')) {
             $address = substr($address, 1, -1);
         }
 
@@ -530,29 +527,29 @@ class Horde_MIME
      * Builds an RFC 822 compliant email address.
      *
      * @param string $mailbox mailbox name
-     * @param string $host domain name of mailbox's host
+     * @param string|null $host domain name of mailbox's host
      * @param string $personal personal name phrase
      *
      * @return string  the correctly escaped and quoted
      *                 "$personal <$mailbox@$host>" string
      */
-    public function rfc822WriteAddress($mailbox, $host = null, $personal = '')
+    public function rfc822WriteAddress(string $mailbox, ?string $host = null, string $personal = ''): string
     {
         $address = '';
 
-        if (strlen($personal)) {
-            $address .= Horde_MIME::_rfc822Encode($personal, 'personal');
+        if ($personal !== '') {
+            $address .= $this->_rfc822Encode($personal, 'personal');
             $address .= ' <';
         }
 
         if (!is_null($host)) {
-            $address .= Horde_MIME::_rfc822Encode($mailbox, 'address');
-            if (substr($host, 0, 1) !== '@') {
+            $address .= $this->_rfc822Encode($mailbox);
+            if (!str_starts_with($host, '@')) {
                 $address .= '@' . $host;
             }
         }
 
-        if (strlen($personal)) {
+        if ($personal !== '') {
             $address .= '>';
         }
 
@@ -570,14 +567,14 @@ class Horde_MIME
      *
      * @return array  the exploded string in an array
      */
-    public function rfc822Explode($string, $delimiters = ',')
+    public function rfc822Explode(string $string, string $delimiters = ',')
     {
         $emails = [];
         $pos = 0;
         $in_group = $in_quote = false;
         $prev = null;
 
-        if (!strlen($string)) {
+        if ($string === '') {
             return [$string];
         }
 
@@ -647,7 +644,7 @@ class Horde_MIME
     public function addrObject2String($ob, $filter = '')
     {
         /* If the personal name is set, decode it. */
-        $ob->personal = isset($ob->personal) ? Horde_MIME::decode($ob->personal) : '';
+        $ob->personal = isset($ob->personal) ? self::decode($ob->personal) : '';
 
         /* If both the mailbox and the host are empty, return an empty
            string.  If we just let this case fall through, the call to
@@ -680,7 +677,7 @@ class Horde_MIME
         }
 
         /* Return the trimmed, formatted email address. */
-        return Horde_MIME::trimEmailAddress(Horde_MIME::rfc822WriteAddress($ob->mailbox, $ob->host, $ob->personal));
+        return $this->trimEmailAddress($this->rfc822WriteAddress($ob->mailbox, $ob->host, $ob->personal));
     }
 
     /**
@@ -704,9 +701,9 @@ class Horde_MIME
         }
 
         foreach ($addresses as $addr) {
-            $val = Horde_MIME::addrObject2String($addr, $filter);
+            $val = $this->addrObject2String($addr, $filter);
             if (!empty($val)) {
-                $bareAddr = Horde_String::lower(Horde_MIME::bareAddress($val));
+                $bareAddr = Horde_String::lower($this->bareAddress($val));
                 if (!isset($addrList[$bareAddr])) {
                     $addrList[$bareAddr] = $val;
                 }
@@ -735,7 +732,7 @@ class Horde_MIME
     {
         $addressList = [];
 
-        $from = Horde_MIME::parseAddressList($address, $defserver);
+        $from = $this->parseAddressList($address, $defserver);
 
         foreach ($from as $entry) {
             if (isset($entry->mailbox)
@@ -780,15 +777,13 @@ class Horde_MIME
          * properly. */
         if (!$validate
             && strpos($address, ':') === false
-            && Horde_Util::extensionExists('imap')
+            && (new Horde_Util())->extensionExists('imap')
         ) {
             return imap_rfc822_parse_adrlist($address, $defserver);
         }
-        $parser = new \Mail_RFC822();
-        $ret = $parser->parseAddressList($address, $defserver, false,
-            $validate);
 
-        return $ret;
+        return (new \Mail_RFC822())->parseAddressList($address, $defserver, false,
+            $validate);
     }
 
     /**
@@ -825,11 +820,11 @@ class Horde_MIME
         // Strip double quotes if they are around the string already.
         // If quoted, we know that the contents are already escaped, so
         // unescape now.
-        if (substr($str, 0, 1) === '"' && substr($str, -1) === '"') {
+        if (str_starts_with($str, '"') && str_ends_with($str, '"')) {
             $str = stripslashes(substr($str, 1, -1));
         }
 
-        if (strcspn($str, $filter) != strlen($str)) {
+        if (strcspn($str, $filter) !== strlen($str)) {
             return '"' . addcslashes($str, '\\"') . '"';
         }
 
@@ -847,7 +842,7 @@ class Horde_MIME
      */
     public function type($input, $format = null)
     {
-        return Horde_MIME::_getCode($input, $format, 'mime_types');
+        return $this->_getCode($input, $format, 'mime_types');
     }
 
     /**
@@ -862,7 +857,7 @@ class Horde_MIME
      */
     public function encoding($input, $format = null)
     {
-        return Horde_MIME::_getCode($input, $format, 'mime_encodings');
+        return $this->_getCode($input, $format, 'mime_encodings');
     }
 
     /**
@@ -897,7 +892,7 @@ class Horde_MIME
                 break;
         }
 
-        $vars = get_class_vars('TechData\AS2SecureBundle\Models\Horde\Horde_MIME');
+        $vars = get_class_vars(Horde_MIME::class);
 
         if ($numeric) {
             if (isset($vars[$type][$input])) {
@@ -918,7 +913,7 @@ class Horde_MIME
      *
      * @param string  a message ID string
      */
-    public function generateMessageID()
+    public function generateMessageID(): string
     {
         return '<' . date('YmdHis') . '.'
         . substr(str_pad(base_convert(microtime(), 10, 36), 16, uniqid(mt_rand()), STR_PAD_LEFT), -16)
@@ -936,7 +931,7 @@ class Horde_MIME
      *
      * @return string  the header text, with linebreaks inserted
      */
-    public function wrapHeaders($header, $text, $eol = "\r\n")
+    public function wrapHeaders(string $header, string $text, string $eol = "\r\n"): string
     {
         $header = rtrim($header);
         $text = rtrim($text);

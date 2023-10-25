@@ -57,6 +57,7 @@ class Client
      *     response: MDN|Message|null,
      *     info: mixed
      * }
+     * @throws AS2Exception
      */
     public function sendRequest($request): array
     {

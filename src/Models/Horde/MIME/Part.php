@@ -376,7 +376,7 @@ class Horde_MIME_Part
            like reset the internal bytes field, even though we shouldn't do
            that (the user has their reasons to set the bytes field to a
            non-zero value without putting the contents into this part. */
-        if (strlen($contents)) {
+        if ($contents !== '') {
             $this->setContents($contents, $this->_currentEncoding);
         }
     }
@@ -432,7 +432,7 @@ class Horde_MIME_Part
         }
         $ptype = $this->getPrimaryType();
         $type = $ptype . '/' . $this->getSubType();
-        if ($charset && ($ptype == 'text')) {
+        if ($charset && ($ptype === 'text')) {
             $type .= '; charset=' . $this->getCharset();
         }
 
@@ -880,7 +880,7 @@ class Horde_MIME_Part
         foreach ($this->getAllContentTypeParameters() as $key => $value) {
             /* Skip the charset key since that would have already been
              * added to $ctype by getType(). */
-            if ($key == 'charset') {
+            if ($key === 'charset') {
                 continue;
             }
             $encode_2231 = Horde_MIME::encodeRFC2231($key, $value, $charset);
@@ -910,7 +910,7 @@ class Horde_MIME_Part
         /* Don't show Content-Disposition for multipart messages unless
            there is a name parameter. */
         $name = $this->getName();
-        if (($ptype != 'multipart') || !empty($name)) {
+        if (($ptype !== 'multipart') || !empty($name)) {
             $disp = $this->getDisposition();
 
             /* Add any disposition parameter information, if available. */
@@ -946,7 +946,7 @@ class Horde_MIME_Part
      *
      * @return string  the MIME string
      */
-    public function toString($headers = true)
+    public function toString(bool $headers = true): string
     {
         $eol = $this->getEOL();
         $ptype = $this->getPrimaryType();
@@ -962,7 +962,7 @@ class Horde_MIME_Part
         /* Any information about a message/* is embedded in the message
            contents themself. Simply output the contents of the part
            directly and return. */
-        if ($ptype == 'message') {
+        if ($ptype === 'message') {
             if (isset($text)) {
                 return $text . $this->_contents;
             }
@@ -977,9 +977,9 @@ class Horde_MIME_Part
         }
 
         /* Deal with multipart messages. */
-        if ($ptype == 'multipart') {
+        if ($ptype === 'multipart') {
             $boundary = trim($this->getContentTypeParameter('boundary'), '"');
-            if (!strlen($this->_contents)) {
+            if ($this->_contents === '') {
                 $text .= 'This message is in MIME format.' . $eol;
             }
             reset($this->_parts);
@@ -1109,9 +1109,7 @@ class Horde_MIME_Part
 
         /* If contents are empty, or contents are already encoded to the
            correct encoding, return now. */
-        if (!strlen($this->_contents)
-            || ($encoding == $this->_currentEncoding)
-        ) {
+        if ($this->_contents === '' || ($encoding == $this->_currentEncoding)) {
             return $this->_contents;
         }
 
@@ -1151,7 +1149,7 @@ class Horde_MIME_Part
         $encoding = $this->getCurrentEncoding();
 
         /* If the contents are empty, return now. */
-        if (!strlen($this->_contents)) {
+        if ($this->_contents === '') {
             $this->_flags['lastTransferDecode'] = $encoding;
 
             return $this->_contents;
@@ -1178,7 +1176,7 @@ class Horde_MIME_Part
                 if (function_exists('convert_uudecode')) {
                     $message = convert_uuencode($this->_contents);
                 } else {
-                    $files = \Mail_mimeDecode::uudecode($this->_contents);
+                    $files = (new \Mail_mimeDecode(''))->uudecode($this->_contents);
                     $message = $files[0]['filedata'];
                 }
                 $this->_flags['lastTransferDecode'] = '8bit';
@@ -1216,7 +1214,7 @@ class Horde_MIME_Part
             return false;
         }
 
-        if (!strlen($this->_contents)) {
+        if ($this->_contents === '') {
             return false;
         }
 
@@ -1303,17 +1301,17 @@ class Horde_MIME_Part
 
         if (empty($this->_flags['contentsSet']) && $this->_bytes) {
             $bytes = $this->_bytes;
-        } elseif ($this->getPrimaryType() == 'multipart') {
+        } elseif ($this->getPrimaryType() === 'multipart') {
             reset($this->_parts);
             while ([, $part] = each($this->_parts)) {
                 /* Skip multipart entries (since this may result in double
                    counting). */
-                if ($part->getPrimaryType() != 'multipart') {
+                if ($part->getPrimaryType() !== 'multipart') {
                     $bytes += $part->getBytes();
                 }
             }
         } else {
-            if ($this->getPrimaryType() == 'text') {
+            if ($this->getPrimaryType() === 'text') {
                 $bytes = Horde_String::length($this->_contents, $this->getCharset());
             } else {
                 $bytes = strlen($this->_contents);

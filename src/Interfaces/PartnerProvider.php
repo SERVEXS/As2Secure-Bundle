@@ -50,5 +50,5 @@ interface PartnerProvider
      * // event trigger connector
      * protected $connector_class          = 'AS2Connector';
      */
-    public function getPartner($partnerId, bool $reload = false);
+    public function getPartner(string $partnerId, bool $reload = false);
 }

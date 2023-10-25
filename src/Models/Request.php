@@ -130,7 +130,7 @@ class Request extends AbstractBase
 
         // handle crypted content
         $crypted = false;
-        if (strtolower($mimetype) == 'application/pkcs7-mime') {
+        if (strtolower($mimetype) === 'application/pkcs7-mime') {
             try {
                 // rewrite message into base64 encoding
                 $content = file_get_contents($input);
@@ -178,7 +178,7 @@ class Request extends AbstractBase
             }
         } else {
             // check requested algo
-            $mic = Adapter::calculateMicChecksum($input, 'sha1');
+            $mic = Adapter::calculateMicChecksum($input);
         }
 
         // security check
@@ -222,9 +222,8 @@ class Request extends AbstractBase
                         'partner_to' => $this->getPartnerFrom(),
                         'is_file' => false,
                         'mic' => $mic];
-                    $object = $this->mdnFactory->build($mime_part, $params);
 
-                    return $object;
+                    return $this->mdnFactory->build($mime_part, $params);
 
                 default:
                     $params = ['partner_from' => $this->getPartnerFrom(),
@@ -239,16 +238,14 @@ class Request extends AbstractBase
         } catch (Exception $e) {
             throw new AS2Exception($e->getMessage(), 6);
         }
-
-        throw new AS2Exception('Unexpected error while handling message.', 6);
     }
 
-    public function encode()
+    public function encode(): bool
     {
         throw new AS2Exception('This method is not available.');
     }
 
-    public function decode()
+    public function decode(): bool
     {
         throw new AS2Exception('This method is not available.');
     }

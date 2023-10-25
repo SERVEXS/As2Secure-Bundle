@@ -14,6 +14,9 @@ class Partner
 {
     private PartnerProvider $partnerProvider;
 
+    /**
+     * @var PartnerModel[]
+     */
     private array $loadedPartners = [];
 
     public function __construct(PartnerProvider $partnerProvider)
@@ -21,10 +24,7 @@ class Partner
         $this->partnerProvider = $partnerProvider;
     }
 
-    /**
-     * @return PartnerModel
-     */
-    public function getPartner($partnerId, bool $reload = false)
+    public function getPartner($partnerId, bool $reload = false): PartnerModel
     {
         if ($reload || !array_key_exists(trim($partnerId), $this->loadedPartners)) {
             $partnerData = $this->partnerProvider->getPartner($partnerId);
@@ -44,6 +44,6 @@ class Partner
             $partnerData = (array) $partnerData;
         }
 
-        return new PartnerModel((array) $partnerData);
+        return new PartnerModel($partnerData);
     }
 }

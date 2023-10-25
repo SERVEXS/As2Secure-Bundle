@@ -2,6 +2,8 @@
 
 namespace TechData\AS2SecureBundle\Models;
 
+use Exception;
+
 /**
  * AS2Secure - PHP Lib for AS2 message encoding / decoding
  *
@@ -28,7 +30,7 @@ namespace TechData\AS2SecureBundle\Models;
  *
  * @version 0.9.0
  */
-class AS2Exception extends \Exception
+class AS2Exception extends Exception
 {
     /**
      * Refers to RFC 4130

@@ -37,11 +37,11 @@ class Horde_MIME_Structure
     public static function &parse($body)
     {
         $msgOb = new Horde_MIME_Message();
-        $msgOb->addPart(Horde_MIME_Structure::_parse($body));
+        $msgOb->addPart(self::_parse($body));
         $msgOb->buildMessage();
 
         $ptr = [&$msgOb];
-        Horde_MIME_Structure::addMultipartInfo($ptr);
+        self::addMultipartInfo($ptr);
 
         return $msgOb;
     }
@@ -53,7 +53,7 @@ class Horde_MIME_Structure
      * @param \stdClass $body the result of imap_fetchstructure()
      * @param string $ref the current bodypart
      *
-     * @return MIME_Part  a MIME_Part object
+     * @return Horde_MIME_Part  a MIME_Part object
      */
     protected static function &_parse($body, $ref = 0)
     {
@@ -73,7 +73,7 @@ class Horde_MIME_Structure
             $ref = 1;
         }
 
-        Horde_MIME_Structure::_setInfo($body, $mime_part, $ref);
+        self::_setInfo($body, $mime_part, $ref);
 
         if (isset($body->type) && ($body->type == $message)
             && $body->ifsubtype && ($body->subtype === 'RFC822')
@@ -96,7 +96,7 @@ class Horde_MIME_Structure
                 } else {
                     $sub_ref = (empty($ref)) ? $sub_id : $ref . '.' . $sub_id;
                 }
-                $mime_part->addPart(Horde_MIME_Structure::_parse($sub_part, $sub_ref), $sub_id++);
+                $mime_part->addPart(self::_parse($sub_part, $sub_ref), $sub_id++);
             }
         }
 
@@ -149,7 +149,7 @@ class Horde_MIME_Structure
         }
 
         /* Go through the content-type parameters, if any. */
-        foreach (Horde_MIME_Structure::_getParameters($part, 1) as $key => $val) {
+        foreach (self::_getParameters($part, 1) as $key => $val) {
             if ($key === 'charset') {
                 $ob->setCharset($val);
             } else {
@@ -165,7 +165,7 @@ class Horde_MIME_Structure
         }*/
 
         /* Go through the disposition parameters, if any. */
-        foreach (Horde_MIME_Structure::_getParameters($part, 2) as $key => $val) {
+        foreach (self::_getParameters($part, 2) as $key => $val) {
             $ob->setDispositionParameter($key, $val);
         }
 
@@ -285,7 +285,7 @@ class Horde_MIME_Structure
             }
 
             $parts = $ptr->getParts();
-            Horde_MIME_Structure::addMultipartInfo($parts, $new_info);
+            self::addMultipartInfo($parts, $new_info);
         }
     }
 
@@ -310,8 +310,8 @@ class Horde_MIME_Structure
             $message = false;
         } else {
             /* Put the object into imap_parsestructure() form. */
-            Horde_MIME_Structure::_convertMimeDecodeData($structure);
-            $message = Horde_MIME_Structure::parse($structure);
+            self::_convertMimeDecodeData($structure);
+            $message = self::parse($structure);
         }
 
         return $message;
@@ -330,7 +330,7 @@ class Horde_MIME_Structure
             $ob->ctype_primary = 'application';
             $ob->ctype_secondary = 'octet-stream';
         }
-        $ob->type = (int)(new Horde_MIME())->type($ob->ctype_primary);
+        $ob->type = (int) (new Horde_MIME())->type($ob->ctype_primary);
 
         /* Secondary content-type. */
         if (isset($ob->ctype_secondary)) {
@@ -357,7 +357,7 @@ class Horde_MIME_Structure
                     $newOb = new \stdClass();
                     $newOb->attribute = $key;
                     $newOb->value = $val;
-                    array_push($ob->$param_value, $newOb);
+                    $ob->$param_value[] = $newOb;
                 }
             } else {
                 $ob->$if_var = 0;
@@ -394,7 +394,7 @@ class Horde_MIME_Structure
         if (isset($ob->parts)) {
             reset($ob->parts);
             while ([$key] = each($ob->parts)) {
-                Horde_MIME_Structure::_convertMimeDecodeData($ob->parts[$key]);
+                self::_convertMimeDecodeData($ob->parts[$key]);
             }
         }
     }
@@ -461,6 +461,6 @@ class Horde_MIME_Structure
             }
         }
 
-        return ($lowercase) ? array_change_key_case($ob, CASE_LOWER) : $ob;
+        return ($lowercase) ? array_change_key_case($ob) : $ob;
     }
 }

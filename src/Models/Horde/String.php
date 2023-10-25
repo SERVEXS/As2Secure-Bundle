@@ -19,7 +19,7 @@ namespace TechData\AS2SecureBundle\Models\Horde;
  */
 class Horde_String
 {
-    public static $charset = 'UTF-8';
+    public static string $charset = 'UTF-8';
 
     /**
      * Caches the result of extension_loaded() calls.
@@ -30,7 +30,7 @@ class Horde_String
      *
      * @see Util::extensionExists()
      */
-    public static function extensionExists($ext)
+    public static function extensionExists($ext): bool
     {
         static $cache = [];
 
@@ -50,11 +50,9 @@ class Horde_String
     public static function setDefaultCharset($charset)
     {
         self::$charset = $charset;
-        if (Horde_String::extensionExists('mbstring')
-            && function_exists('mb_regex_encoding')
-        ) {
+        if (self::extensionExists('mbstring') && function_exists('mb_regex_encoding')) {
             $old_error = error_reporting(0);
-            mb_regex_encoding(Horde_String::_mbstringCharset($charset));
+            mb_regex_encoding(self::_mbstringCharset($charset));
             error_reporting($old_error);
         }
     }
@@ -76,7 +74,7 @@ class Horde_String
      *
      * @return mixed  the converted input data
      */
-    public static function convertCharset($input, $from, $to = null)
+    public static function convertCharset($input, $from, ?string $to = null)
     {
         /* Don't bother converting numbers. */
         if (is_numeric($input)) {
@@ -89,8 +87,8 @@ class Horde_String
         }
 
         /* If the from and to character sets are identical, return now. */
-        $from = Horde_String::lower($from);
-        $to = Horde_String::lower($to);
+        $from = self::lower($from);
+        $to = self::lower($to);
         if ($from == $to) {
             return $input;
         }
@@ -99,7 +97,7 @@ class Horde_String
             $tmp = [];
             reset($input);
             while ([$key, $val] = each($input)) {
-                $tmp[Horde_String::_convertCharset($key, $from, $to)] = Horde_String::convertCharset($val, $from, $to);
+                $tmp[self::_convertCharset($key, $from, $to)] = self::convertCharset($val, $from, $to);
             }
 
             return $tmp;
@@ -107,7 +105,7 @@ class Horde_String
         if (is_object($input)) {
             $vars = get_object_vars($input);
             while ([$key, $val] = each($vars)) {
-                $input->$key = Horde_String::convertCharset($val, $from, $to);
+                $input->$key = self::convertCharset($val, $from, $to);
             }
 
             return $input;
@@ -117,7 +115,7 @@ class Horde_String
             return $input;
         }
 
-        return Horde_String::_convertCharset($input, $from, $to);
+        return self::_convertCharset($input, $from, $to);
     }
 
     /**
@@ -138,7 +136,7 @@ class Horde_String
         /* Use utf8_[en|de]code() if possible and if the string isn't too
          * large (less than 16 MB = 16 * 1024 * 1024 = 16777216 bytes) - these
          * public functions use more memory. */
-        if (strlen($input) < 16777216 || !(Horde_String::extensionExists('iconv') || Horde_String::extensionExists('mbstring'))) {
+        if (strlen($input) < 16777216 || !(self::extensionExists('iconv') || self::extensionExists('mbstring'))) {
             if ($from_check && ($to === 'utf-8')) {
                 return utf8_encode($input);
             }
@@ -151,7 +149,7 @@ class Horde_String
         /* First try iconv with transliteration. */
         if (($from !== 'utf7-imap')
             && ($to !== 'utf7-imap')
-            && Horde_String::extensionExists('iconv')
+            && self::extensionExists('iconv')
         ) {
             /* We need to tack an extra character temporarily because of a bug
              * in iconv() if the last character is not a 7 bit ASCII
@@ -159,21 +157,21 @@ class Horde_String
             $oldTrackErrors = ini_set('track_errors', 1);
             unset($php_errormsg);
             $output = @iconv($from, $to . '//TRANSLIT', $input . 'x');
-            $output = (isset($php_errormsg)) ? false : Horde_String::substr($output, 0, -1, $to);
+            $output = (isset($php_errormsg)) ? false : self::substr($output, 0, -1, $to);
             if (PHP_MAJOR_VERSION < 7) {
                 ini_set('track_errors', $oldTrackErrors);
             }
         }
 
         /* Next try mbstring. */
-        if (!$output && Horde_String::extensionExists('mbstring')) {
+        if (!$output && self::extensionExists('mbstring')) {
             $old_error = error_reporting(0);
-            $output = mb_convert_encoding($input, $to, Horde_String::_mbstringCharset($from));
+            $output = mb_convert_encoding($input, $to, self::_mbstringCharset($from));
             error_reporting($old_error);
         }
 
         /* At last try imap_utf7_[en|de]code if appropriate. */
-        if (!$output && Horde_String::extensionExists('imap')) {
+        if (!$output && self::extensionExists('imap')) {
             if ($from_check && ($to === 'utf7-imap')) {
                 return @imap_utf7_encode($input);
             }
@@ -202,14 +200,14 @@ class Horde_String
 
         if ($locale) {
             /* The existence of mb_strtolower() depends on the platform. */
-            if (Horde_String::extensionExists('mbstring')
+            if (self::extensionExists('mbstring')
                 && function_exists('mb_strtolower')
             ) {
                 if (is_null($charset)) {
                     $charset = self::$charset;
                 }
                 $old_error = error_reporting(0);
-                $ret = mb_strtolower($string, Horde_String::_mbstringCharset($charset));
+                $ret = mb_strtolower($string, self::_mbstringCharset($charset));
                 error_reporting($old_error);
                 if (!empty($ret)) {
                     return $ret;
@@ -255,7 +253,7 @@ class Horde_String
                     $charset = self::$charset;
                 }
                 $old_error = error_reporting(0);
-                $ret = mb_strtoupper($string, Horde_String::_mbstringCharset($charset));
+                $ret = mb_strtoupper($string, self::_mbstringCharset($charset));
                 error_reporting($old_error);
                 if (!empty($ret)) {
                     return $ret;
@@ -292,9 +290,9 @@ class Horde_String
     public static function ucfirst($string, $locale = false, $charset = null)
     {
         if ($locale) {
-            $first = Horde_String::substr($string, 0, 1, $charset);
-            if (Horde_String::isAlpha($first, $charset)) {
-                $string = String . phpHorde_String::upper($first, true, $charset) . Horde_String::substr(
+            $first = self::substr($string, 0, 1, $charset);
+            if (self::isAlpha($first, $charset)) {
+                $string = String . phpHorde_String::upper($first, true, $charset) . self::substr(
                     $string,
                     1,
                     null,
@@ -313,17 +311,17 @@ class Horde_String
      *
      * @param string $string the string to be converted
      * @param int $start the part's start position, zero based
-     * @param int $length the part's length
+     * @param int|null $length the part's length
      * @param string $charset the charset to use when calculating the part's
      *                         position and length, defaults to current
      *                         charset
      *
      * @return string  the string's part
      */
-    public static function substr($string, $start, $length = null, $charset = null)
+    public static function substr(string $string, int $start, ?int $length = null, ?string $charset = null): string
     {
         if (is_null($length)) {
-            $length = Horde_String::length($string, $charset) - $start;
+            $length = self::length($string, $charset) - $start;
         }
 
         if ($length == 0) {
@@ -346,15 +344,15 @@ class Horde_String
         }
 
         /* Try mbstring. */
-        if (Horde_String::extensionExists('mbstring')) {
+        if (self::extensionExists('mbstring')) {
             if (is_null($charset)) {
                 $charset = self::$charset;
             }
             $old_error = error_reporting(0);
-            $ret = mb_substr($string, $start, $length, Horde_String::_mbstringCharset($charset));
+            $ret = mb_substr($string, $start, $length, self::_mbstringCharset($charset));
             error_reporting($old_error);
             /* mb_substr() returns empty string on failure. */
-            if (strlen($ret)) {
+            if ($ret !== '') {
                 return $ret;
             }
         }
@@ -366,23 +364,23 @@ class Horde_String
      * Returns the character (not byte) length of a string.
      *
      * @param string $string the string to return the length of
-     * @param string $charset the charset to use when calculating the string's
+     * @param string|null $charset the charset to use when calculating the string's
      *                        length
      *
-     * @return string  the string's part
+     * @return string|int  the string's part
      */
-    public static function length($string, $charset = null)
+    public static function length($string, ?string $charset = null)
     {
         if (is_null($charset)) {
             $charset = self::$charset;
         }
-        $charset = Horde_String::lower($charset);
+        $charset = self::lower($charset);
         if ($charset === 'utf-8' || $charset === 'utf8') {
             return strlen(utf8_decode($string));
         }
-        if (Horde_String::extensionExists('mbstring')) {
+        if (self::extensionExists('mbstring')) {
             $old_error = error_reporting(0);
-            $ret = mb_strlen($string, Horde_String::_mbstringCharset($charset));
+            $ret = mb_strlen($string, self::_mbstringCharset($charset));
             error_reporting($old_error);
             if (!empty($ret)) {
                 return $ret;
@@ -407,13 +405,13 @@ class Horde_String
      */
     public static function pos($haystack, $needle, $offset = 0, $charset = null)
     {
-        if (Horde_String::extensionExists('mbstring')) {
+        if (self::extensionExists('mbstring')) {
             if (is_null($charset)) {
                 $charset = self::$charset;
             }
             $track_errors = ini_set('track_errors', 1);
             $old_error = error_reporting(0);
-            $ret = mb_strpos($haystack, $needle, $offset, Horde_String::_mbstringCharset($charset));
+            $ret = mb_strpos($haystack, $needle, $offset, self::_mbstringCharset($charset));
             error_reporting($old_error);
             ini_set('track_errors', $track_errors);
             if (!isset($php_errormsg)) {
@@ -443,9 +441,9 @@ class Horde_String
     public static function pad($input, $length, $pad = ' ', $type = STR_PAD_RIGHT,
         $charset = null)
     {
-        $mb_length = Horde_String::length($input, $charset);
+        $mb_length = self::length($input, $charset);
         $sb_length = strlen($input);
-        $pad_length = Horde_String::length($pad, $charset);
+        $pad_length = self::length($pad, $charset);
 
         /* Return if we already have the length. */
         if ($mb_length >= $length) {
@@ -472,11 +470,11 @@ class Horde_String
                 $right = ceil(($length - $mb_length) / 2);
                 $output = String . phpHorde_String::substr(str_repeat($pad, ceil($left / $pad_length)), 0, $left, $charset) .
                     $input .
-                    Horde_String::substr(str_repeat($pad, ceil($right / $pad_length)), 0, $right, $charset);
+                    self::substr(str_repeat($pad, ceil($right / $pad_length)), 0, $right, $charset);
                 break;
             case STR_PAD_RIGHT:
                 $right = $length - $mb_length;
-                $output = $input . Horde_String::substr(str_repeat($pad, ceil($right / $pad_length)), 0, $right, $charset);
+                $output = $input . self::substr(str_repeat($pad, ceil($right / $pad_length)), 0, $right, $charset);
                 break;
         }
 
@@ -509,17 +507,17 @@ class Horde_String
         if (is_null($charset)) {
             $charset = self::$charset;
         }
-        $charset = Horde_String::_mbstringCharset($charset);
-        $string = Horde_String::convertCharset($string, $charset, 'utf-8');
+        $charset = self::_mbstringCharset($charset);
+        $string = self::convertCharset($string, $charset, 'utf-8');
         $wrapped = '';
 
-        while (Horde_String::length($string, 'utf-8') > $width) {
-            $line = Horde_String::substr($string, 0, $width, 'utf-8');
-            $string = Horde_String::substr($string, Horde_String::length($line, 'utf-8'), null, 'utf-8');
+        while (self::length($string, 'utf-8') > $width) {
+            $line = self::substr($string, 0, $width, 'utf-8');
+            $string = self::substr($string, self::length($line, 'utf-8'), null, 'utf-8');
             // Make sure didn't cut a word, unless we want hard breaks anyway.
             if (!$cut && preg_match('/^(.+?)(\s|\r?\n)/u', $string, $match)) {
                 $line .= $match[1];
-                $string = Horde_String::substr($string, Horde_String::length($match[1], 'utf-8'), null, 'utf-8');
+                $string = self::substr($string, self::length($match[1], 'utf-8'), null, 'utf-8');
             }
             // Wrap at existing line breaks.
             if (preg_match('/^(.*?)(\r?\n)(.*)$/u', $line, $match)) {
@@ -556,7 +554,7 @@ class Horde_String
             $wrapped .= $line;
         }
 
-        return Horde_String::convertCharset($wrapped . $string, 'utf-8', $charset);
+        return self::convertCharset($wrapped . $string, 'utf-8', $charset);
     }
 
     /**
@@ -588,7 +586,7 @@ class Horde_String
                 if ($input !== '-- ') {
                     $input = rtrim($input);
                 }
-                $line = Horde_String::wordwrap($input, $length, $break_char, false, $charset);
+                $line = self::wordwrap($input, $length, $break_char, false, $charset);
             }
 
             $paragraphs[] = $line;
@@ -608,11 +606,11 @@ class Horde_String
      */
     public static function isAlpha($string, $charset = null)
     {
-        if (!Horde_String::extensionExists('mbstring')) {
+        if (!self::extensionExists('mbstring')) {
             return ctype_alpha($string);
         }
 
-        $charset = Horde_String::_mbstringCharset($charset);
+        $charset = self::_mbstringCharset($charset);
         $old_charset = mb_regex_encoding();
         $old_error = error_reporting(0);
 
@@ -640,8 +638,8 @@ class Horde_String
      */
     public static function isLower($string, $charset = null)
     {
-        return (Horde_String::lower($string, true, $charset) === $string)
-            && Horde_String::isAlpha($string, $charset);
+        return (self::lower($string, true, $charset) === $string)
+            && self::isAlpha($string, $charset);
     }
 
     /**
@@ -655,8 +653,8 @@ class Horde_String
      */
     public static function isUpper($string, $charset = null)
     {
-        return (Horde_String::upper($string, true, $charset) === $string)
-            && Horde_String::isAlpha($string, $charset);
+        return (self::upper($string, true, $charset) === $string)
+            && self::isAlpha($string, $charset);
     }
 
     /**
@@ -674,8 +672,8 @@ class Horde_String
     public static function regexMatch($text, $regex, $charset = null)
     {
         if (!empty($charset)) {
-            $regex = Horde_String::convertCharset($regex, $charset, 'utf-8');
-            $text = Horde_String::convertCharset($text, $charset, 'utf-8');
+            $regex = self::convertCharset($regex, $charset, 'utf-8');
+            $text = self::convertCharset($text, $charset, 'utf-8');
         }
 
         $matches = [];
@@ -686,7 +684,7 @@ class Horde_String
         }
 
         if (!empty($charset)) {
-            $matches = Horde_String::convertCharset($matches, 'utf-8', $charset);
+            $matches = self::convertCharset($matches, 'utf-8', $charset);
         }
 
         return $matches;
@@ -706,7 +704,7 @@ class Horde_String
          * example, by various versions of Outlook to send Korean characters.
          * Use UHC (CP949) encoding instead. See, e.g.,
          * http://lists.w3.org/Archives/Public/ietf-charsets/2001AprJun/0030.html */
-        if (in_array(Horde_String::lower($charset), ['ks_c_5601-1987', 'ks_c_5601-1989'])) {
+        if (in_array(self::lower($charset), ['ks_c_5601-1987', 'ks_c_5601-1989'])) {
             $charset = 'UHC';
         }
 

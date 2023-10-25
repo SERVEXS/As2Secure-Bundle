@@ -11,7 +11,7 @@ class MessageSent extends Event
 {
     private Message $message;
 
-    private array $headers = [];
+    private array $headers;
 
     public function __construct(Message $message, array $headers)
     {

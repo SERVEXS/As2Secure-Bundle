@@ -41,16 +41,22 @@ class Adapter
      * for overriding PATH usage
      */
     public static string $ssl_adapter = 'AS2Secure.jar';
+
     public static string $ssl_openssl = 'openssl';
+
     public static string $javapath = 'java';
+
     /**
      * Array to store temporary files created and scheduled to unlink
      */
-    protected static $tmp_files;
-    protected $partner_from;
-    protected $partner_to;
+    protected static array $tmp_files;
+
+    protected ?Partner $partner_from;
+
+    protected ?Partner $partner_to;
 
     private PartnerFactory $partnerFactory;
+
     private $AS2_DIR_BIN;
 
     public function __construct(PartnerFactory $partnerFactory, $AS2_DIR_BIN)
@@ -83,7 +89,7 @@ class Adapter
      *
      * @return string       the string in binary format
      */
-    public static function hex2bin($str)
+    public static function hex2bin($str): string
     {
         $bin = '';
         $i = 0;
@@ -113,7 +119,7 @@ class Adapter
             $dump = self::exec($command, true);
 
             return $dump[0];
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             return false;
         }
     }
@@ -125,27 +131,24 @@ class Adapter
      * @param bool $return_output True  to return all data from standard output
      *                                   False to return only the error code
      *
-     * @return string    The error code or the content from standard output
+     * @throws \Exception
      */
-    public static function exec($command, $return_output = false)
+    public static function exec(string $command, bool $return_output = false): string
     {
         $output = [];
         $return_var = 0;
-        try {
-            exec($command, $output, $return_var);
-            $line = ($output[0] ?? 'Unexpected error in command line : ' . $command);
-            if ($return_var) {
-                throw new Exception($line, (int) $return_var);
-            }
-        } catch (Exception $e) {
-            throw $e;
+
+        exec($command, $output, $return_var);
+        $line = ($output[0] ?? 'Unexpected error in command line : ' . $command);
+        if ($return_var) {
+            throw new \Exception($line, (int) $return_var);
         }
 
         if ($return_output) {
-            return $output;
+            return implode(PHP_EOL, $output);
         }
 
-            return $return_var;
+        return (string) $return_var;
     }
 
     /**
@@ -155,6 +158,8 @@ class Adapter
      * @param string $password The PKCS12 Certificate's password
      *
      * @return string            The file which contains the CA
+     *
+     * @throws AS2Exception
      */
     public static function getCAFromPKCS12($input, $password = '')
     {
@@ -169,26 +174,24 @@ class Adapter
      * @param string $password The PKCS12 Certificate's password
      *
      * @return string            The file which contains the Part
+     *
+     * @throws AS2Exception
      */
     protected static function getDataFromPKCS12($input, $token, $password = '')
     {
-        try {
-            $pkcs12 = file_get_contents($input);
+        $pkcs12 = file_get_contents($input);
 
-            $certs = [];
-            openssl_pkcs12_read($pkcs12, $certs, $password);
+        $certs = [];
+        openssl_pkcs12_read($pkcs12, $certs, $password);
 
-            if (!isset($certs[$token])) {
-                throw new AS2Exception('Unexpected error while extracting certificates from pkcs12 container.');
-            }
-
-            $output = self::getTempFilename();
-            file_put_contents($output, $certs[$token]);
-
-            return $output;
-        } catch (Exception $e) {
-            throw $e;
+        if (!isset($certs[$token])) {
+            throw new AS2Exception('Unexpected error while extracting certificates from pkcs12 container.');
         }
+
+        $output = self::getTempFilename();
+        file_put_contents($output, $certs[$token]);
+
+        return $output;
     }
 
     /**
@@ -201,7 +204,7 @@ class Adapter
     {
         if (is_null(self::$tmp_files)) {
             self::$tmp_files = [];
-            register_shutdown_function([Adapter::class, '_deleteTempFiles']);
+            register_shutdown_function([__CLASS__, '_deleteTempFiles']);
         }
 
         $dir = sys_get_temp_dir();
@@ -312,7 +315,8 @@ class Adapter
             'ods' => 'application/vnd.oasis.opendocument.spreadsheet',
         ];
 
-        $ext = strtolower(array_pop(explode('.', $file)));
+        $fileParts = explode('.', $file);
+        $ext = strtolower(array_pop($fileParts));
         if (array_key_exists($ext, $mime_types)) {
             return $mime_types[$ext];
         }
@@ -342,13 +346,13 @@ class Adapter
     {
         try {
             $this->partner_from = $this->partnerFactory->getPartner($partner_from);
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             throw new AS2Exception('Sender AS2 id "' . $partner_from . '" is unknown.');
         }
 
         try {
             $this->partner_to = $this->partnerFactory->getPartner($partner_to);
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             throw new AS2Exception('Receiver AS2 id "' . $partner_to . '" is unknown.');
         }
     }
@@ -357,35 +361,34 @@ class Adapter
      * Generate a mime multipart file from files
      *
      * @return string              The file generated
+     *
+     * @throws \Exception
+     * @throws \Exception
      */
     public function compose($files)
     {
-        try {
-            if (!is_array($files) || !count($files)) {
-                throw new Exception('No file provided.');
-            }
-
-            $args = '';
-            foreach ($files as $file) {
-                $args .= ' -file ' . escapeshellarg($file['path']) .
-                    ' -mimetype ' . escapeshellarg($file['mimetype']) .
-                    ' -name ' . escapeshellarg($file['filename']);
-            }
-
-            $output = self::getTempFilename();
-
-            // execute main operation
-            $command = self::$javapath . ' -jar ' . escapeshellarg($this->AS2_DIR_BIN . self::$ssl_adapter) .
-                ' compose' .
-                $args .
-                ' -out ' . escapeshellarg($output);
-
-            $result = self::exec($command);
-
-            return $output;
-        } catch (Exception $e) {
-            throw $e;
+        if (!is_array($files) || !count($files)) {
+            throw new \Exception('No file provided.');
         }
+
+        $args = '';
+        foreach ($files as $file) {
+            $args .= ' -file ' . escapeshellarg($file['path']) .
+                ' -mimetype ' . escapeshellarg($file['mimetype']) .
+                ' -name ' . escapeshellarg($file['filename']);
+        }
+
+        $output = self::getTempFilename();
+
+        // execute main operation
+        $command = self::$javapath . ' -jar ' . escapeshellarg($this->AS2_DIR_BIN . self::$ssl_adapter) .
+            ' compose' .
+            $args .
+            ' -out ' . escapeshellarg($output);
+
+        $result = self::exec($command);
+
+        return $output;
     }
 
     /**
@@ -394,45 +397,44 @@ class Adapter
      * @param string $input The file to extract
      *
      * @return array                The list of extracted files (path / mimetype / filename)
+     *
+     * @throws AS2Exception
+     * @throws AS2Exception
      */
     public function extract($input)
     {
-        try {
-            $output = self::getTempFilename();
+        $output = self::getTempFilename();
 
-            // execute main operation
-            $command = self::$javapath . ' -jar ' . escapeshellarg($this->AS2_DIR_BIN . self::$ssl_adapter) .
-                ' extract' .
-                ' -in ' . escapeshellarg($input) .
-                ' -out ' . escapeshellarg($output);
-            $results = self::exec($command, true);
+        // execute main operation
+        $command = self::$javapath . ' -jar ' . escapeshellarg($this->AS2_DIR_BIN . self::$ssl_adapter) .
+            ' extract' .
+            ' -in ' . escapeshellarg($input) .
+            ' -out ' . escapeshellarg($output);
+        $results = self::exec($command, true);
 
-            // array returned
-            $files = [];
+        // array returned
+        $files = [];
 
-            foreach ($results as $tmp) {
-                $tmp = explode(';', $tmp);
-                if (count($tmp) <= 1) {
-                    continue;
-                }
-                if (count($tmp) != 3) {
-                    throw new AS2Exception('Unexpected data structure while extracting message.');
-                }
-
-                $file = [];
-                $file['path'] = trim($tmp[0], '"');
-                $file['mimetype'] = trim($tmp[1], '"');
-                $file['filename'] = trim($tmp[2], '"');
-                $files[] = $file;
-
-                // schedule file deletion
-                Adapter::addTempFileForDelete($file['path']);
+        foreach ($results as $tmp) {
+            $tmp = explode(';', $tmp);
+            if (count($tmp) <= 1) {
+                continue;
+            }
+            if (count($tmp) != 3) {
+                throw new AS2Exception('Unexpected data structure while extracting message.');
             }
 
-            return $files;
-        } catch (Exception $e) {
-            throw $e;
+            $file = [];
+            $file['path'] = trim($tmp[0], '"');
+            $file['mimetype'] = trim($tmp[1], '"');
+            $file['filename'] = trim($tmp[2], '"');
+            $files[] = $file;
+
+            // schedule file deletion
+            self::addTempFileForDelete($file['path']);
         }
+
+        return $files;
     }
 
     /**
@@ -453,24 +455,23 @@ class Adapter
      * @param string $input The file to compress
      *
      * @return string                The content compressed
+     *
+     * @throws \Exception
+     * @throws \Exception
      */
     public function compress($input)
     {
-        try {
-            $output = self::getTempFilename();
+        $output = self::getTempFilename();
 
-            // execute main operation
-            $command = self::$javapath . ' -jar ' . escapeshellarg($this->AS2_DIR_BIN . self::$ssl_adapter) .
-                ' compress' .
-                ' -in ' . escapeshellarg($input) .
-                ' -out ' . escapeshellarg($output);
+        // execute main operation
+        $command = self::$javapath . ' -jar ' . escapeshellarg($this->AS2_DIR_BIN . self::$ssl_adapter) .
+            ' compress' .
+            ' -in ' . escapeshellarg($input) .
+            ' -out ' . escapeshellarg($output);
 
-            $result = self::exec($command);
+        $result = self::exec($command);
 
-            return $output;
-        } catch (Exception $e) {
-            throw $e;
-        }
+        return $output;
     }
 
     /**
@@ -479,24 +480,23 @@ class Adapter
      * @param string $input The file to compress
      *
      * @return string                The content decompressed
+     *
+     * @throws \Exception
+     * @throws \Exception
      */
     public function decompress($input)
     {
-        try {
-            $output = self::getTempFilename();
+        $output = self::getTempFilename();
 
-            // execute main operation
-            $command = self::$javapath . ' -jar ' . escapeshellarg($this->AS2_DIR_BIN . self::$ssl_adapter) .
-                ' decompress' .
-                ' -in ' . escapeshellarg($input) .
-                ' -out ' . escapeshellarg($output);
+        // execute main operation
+        $command = self::$javapath . ' -jar ' . escapeshellarg($this->AS2_DIR_BIN . self::$ssl_adapter) .
+            ' decompress' .
+            ' -in ' . escapeshellarg($input) .
+            ' -out ' . escapeshellarg($output);
 
-            $result = self::exec($command);
+        $result = self::exec($command);
 
-            return $output;
-        } catch (Exception $e) {
-            throw $e;
-        }
+        return $output;
     }
 
     /**
@@ -507,40 +507,41 @@ class Adapter
      * @param string $encoding Encoding to use for main container (base64 | binary)
      *
      * @return string                The content signed
+     *
+     * @throws \Exception
+     * @throws \Exception
      */
     public function sign($input, $use_zlib = false, $encoding = 'base64')
     {
-        try {
-            if (!$this->partner_from->sec_pkcs12) {
-                throw new Exception('Config error : PKCS12 (' . $this->partner_from->id . ')');
-            }
-
-            $password = ($this->partner_from->sec_pkcs12_password ? ' -password ' . escapeshellarg($this->partner_from->sec_pkcs12_password) : ' -nopassword');
-
-            if ($use_zlib) {
-                $compress = ' -compress';
-            } else {
-                $compress = '';
-            }
-
-            $output = self::getTempFilename();
-
-            // execute main operation
-            $command = self::$javapath . ' -jar ' . escapeshellarg($this->AS2_DIR_BIN . self::$ssl_adapter) .
-                ' sign' .
-                ' -pkcs12 ' . escapeshellarg($this->partner_from->sec_pkcs12) .
-                $password .
-                $compress .
-                ' -encoding ' . escapeshellarg(strtolower($encoding)) .
-                ' -in ' . escapeshellarg($input) .
-                ' -out ' . escapeshellarg($output) .
-                ' >/dev/null';
-            $result = self::exec($command);
-
-            return $output;
-        } catch (Exception $e) {
-            throw $e;
+        if (!$this->partner_from->sec_pkcs12) {
+            throw new \Exception('Config error : PKCS12 (' . $this->partner_from->id . ')');
         }
+
+        $password = ($this->partner_from->sec_pkcs12_password ? ' -password ' . escapeshellarg(
+            $this->partner_from->sec_pkcs12_password
+        ) : ' -nopassword');
+
+        if ($use_zlib) {
+            $compress = ' -compress';
+        } else {
+            $compress = '';
+        }
+
+        $output = self::getTempFilename();
+
+        // execute main operation
+        $command = self::$javapath . ' -jar ' . escapeshellarg($this->AS2_DIR_BIN . self::$ssl_adapter) .
+            ' sign' .
+            ' -pkcs12 ' . escapeshellarg($this->partner_from->sec_pkcs12) .
+            $password .
+            $compress .
+            ' -encoding ' . escapeshellarg(strtolower($encoding)) .
+            ' -in ' . escapeshellarg($input) .
+            ' -out ' . escapeshellarg($output) .
+            ' >/dev/null';
+        $result = self::exec($command);
+
+        return $output;
     }
 
     /**
@@ -549,33 +550,34 @@ class Adapter
      * @param string $input The file to check
      *
      * @return string                The content signed
+     *
+     * @throws \Exception
+     * @throws \Exception
      */
     public function verify($input)
     {
-        try {
-            if ($this->partner_from->sec_pkcs12) {
-                $security = ' -pkcs12 ' . escapeshellarg($this->partner_from->sec_pkcs12) .
-                    ($this->partner_from->sec_pkcs12_password ? ' -password ' . escapeshellarg($this->partner_from->sec_pkcs12_password) : ' -nopassword');
-            } else {
-                $security = ' -cert ' . escapeshellarg($this->partner_from->sec_certificate);
-            }
-
-            $output = self::getTempFilename();
-
-            $command = self::$javapath . ' -jar ' . escapeshellarg($this->AS2_DIR_BIN . self::$ssl_adapter) .
-                ' verify' .
-                $security .
-                ' -in ' . escapeshellarg($input) .
-                ' -out ' . escapeshellarg($output) .
-                ' >/dev/null 2>&1';
-
-            // on error, an exception is throw
-            $result = self::exec($command);
-
-            return $output;
-        } catch (Exception $e) {
-            throw $e;
+        if ($this->partner_from->sec_pkcs12) {
+            $security = ' -pkcs12 ' . escapeshellarg($this->partner_from->sec_pkcs12) .
+                ($this->partner_from->sec_pkcs12_password ? ' -password ' . escapeshellarg(
+                    $this->partner_from->sec_pkcs12_password
+                ) : ' -nopassword');
+        } else {
+            $security = ' -cert ' . escapeshellarg($this->partner_from->sec_certificate);
         }
+
+        $output = self::getTempFilename();
+
+        $command = self::$javapath . ' -jar ' . escapeshellarg($this->AS2_DIR_BIN . self::$ssl_adapter) .
+            ' verify' .
+            $security .
+            ' -in ' . escapeshellarg($input) .
+            ' -out ' . escapeshellarg($output) .
+            ' >/dev/null 2>&1';
+
+        // on error, an exception is throw
+        $result = self::exec($command);
+
+        return $output;
     }
 
     /**
@@ -585,45 +587,46 @@ class Adapter
      * @param string $cypher The Cypher to use for encryption
      *
      * @return string                The message encrypted
+     *
+     * @throws \Exception
+     * @throws \Exception
      */
     public function encrypt($input, $cypher = 'des3')
     {
-        try {
-            if (!$this->partner_to->sec_certificate) {
-                $certificate = self::getPublicFromPKCS12($this->partner_to->sec_pkcs12, $this->partner_to->sec_pkcs12_password);
-            } else {
-                $certificate = $this->partner_to->sec_certificate;
-            }
-
-            if (!$certificate) {
-                throw new Exception('Unable to extract private key from PKCS12 file. (' . $this->partner_to->sec_pkcs12 . ' - using:' . $this->partner_to->sec_pkcs12_password . ')');
-            }
-
-            $output = self::getTempFilename();
-
-            $command = self::$ssl_openssl . ' cms ' .
-                ' -encrypt' .
-                ' -in ' . escapeshellarg($input) .
-                ' -out ' . escapeshellarg($output) .
-                ' -des3 ' . escapeshellarg($certificate);
-            $result = static::exec($command);
-
-            $headers = 'Content-Type: application/pkcs7-mime; smime-type="enveloped-data"; name="smime.p7m"' . "\n" .
-                'Content-Disposition: attachment; filename="smime.p7m"' . "\n" .
-                'Content-Transfer-Encoding: binary' . "\n\n";
-            $content = file_get_contents($output);
-
-            // we remove header auto-added by openssl
-            $content = substr($content, strpos($content, "\n\n") + 2);
-            $content = base64_decode($content);
-
-            $content = $headers . $content;
-            file_put_contents($output, $content);
-
-            return $output;
-        } catch (Exception $e) {
-            throw $e;
+        if (!$this->partner_to->sec_certificate) {
+            $certificate = self::getPublicFromPKCS12($this->partner_to->sec_pkcs12, $this->partner_to->sec_pkcs12_password);
+        } else {
+            $certificate = $this->partner_to->sec_certificate;
         }
+
+        if (!$certificate) {
+            throw new \Exception(
+                'Unable to extract private key from PKCS12 file. (' . $this->partner_to->sec_pkcs12 . ' - using:' . $this->partner_to->sec_pkcs12_password . ')'
+            );
+        }
+
+        $output = self::getTempFilename();
+
+        $command = self::$ssl_openssl . ' cms ' .
+            ' -encrypt' .
+            ' -in ' . escapeshellarg($input) .
+            ' -out ' . escapeshellarg($output) .
+            ' -des3 ' . escapeshellarg($certificate);
+        $result = static::exec($command);
+
+        $headers = 'Content-Type: application/pkcs7-mime; smime-type="enveloped-data"; name="smime.p7m"' . "\n" .
+            'Content-Disposition: attachment; filename="smime.p7m"' . "\n" .
+            'Content-Transfer-Encoding: binary' . "\n\n";
+        $content = file_get_contents($output);
+
+        // we remove header auto-added by openssl
+        $content = substr($content, strpos($content, "\n\n") + 2);
+        $content = base64_decode($content);
+
+        $content = $headers . $content;
+        file_put_contents($output, $content);
+
+        return $output;
     }
 
     /**
@@ -651,6 +654,9 @@ class Adapter
      * @param string $password The PKCS12 Certificate's password
      *
      * @return string            The file which contains the Public Certificate
+     *
+     * @throws AS2Exception
+     * @throws AS2Exception
      */
     public static function getPublicFromPKCS12($input, $password = '')
     {
@@ -663,13 +669,18 @@ class Adapter
      * @param string $input The file to decrypt
      *
      * @return string                The file decrypted
+     *
+     * @throws AS2Exception
+     * @throws AS2Exception
      */
     public function decrypt($input)
     {
         try {
             $private_key = self::getPrivateFromPKCS12($this->partner_to->sec_pkcs12, $this->partner_to->sec_pkcs12_password);
             if (!$private_key) {
-                throw new AS2Exception('Unable to extract private key from PKCS12 file. (' . $this->partner_to->sec_pkcs12 . ' - using:' . $this->partner_to->sec_pkcs12_password . ')');
+                throw new AS2Exception(
+                    'Unable to extract private key from PKCS12 file. (' . $this->partner_to->sec_pkcs12 . ' - using:' . $this->partner_to->sec_pkcs12_password . ')'
+                );
             }
 
             $output = self::getTempFilename();
@@ -683,7 +694,7 @@ class Adapter
             $result = static::exec($command);
 
             return $output;
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             throw $e;
         }
     }
@@ -695,6 +706,9 @@ class Adapter
      * @param string $password The PKCS12 Certificate's password
      *
      * @return string                The file which contains the Private Certificate
+     *
+     * @throws AS2Exception
+     * @throws AS2Exception
      */
     public static function getPrivateFromPKCS12($input, $password = '')
     {

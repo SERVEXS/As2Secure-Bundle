@@ -60,10 +60,10 @@ class Message extends AbstractBase
             $this->path = $data->getPath();
         } elseif ($data instanceof Horde_MIME_Part) {
             $this->path = Adapter::getTempFilename();
-            file_put_contents($this->path, $data->toString(true));
+            file_put_contents($this->path, $data->toString());
         } elseif ($data) {
             if (!isset($params['is_file']) || $params['is_file']) {
-                $this->addFile($data, '', '', true);
+                $this->addFile($data);
             } else {
                 $this->addFile($data, '', '', false);
             }
@@ -81,10 +81,8 @@ class Message extends AbstractBase
      * @param string $mimetype The mimetype of the message
      * @param bool $is_file If file
      * @param string $encoding The encoding to use for transfert
-     *
-     * @return bool
      */
-    public function addFile($data, $mimetype = '', $filename = '', $is_file = true, $encoding = 'base64')
+    public function addFile($data, string $mimetype = '', string $filename = '', bool $is_file = true, string $encoding = 'base64'): void
     {
         if (!$is_file) {
             $file = Adapter::getTempFilename();
@@ -101,22 +99,12 @@ class Message extends AbstractBase
             $mimetype = Adapter::detectMimeType($data);
         }
 
-        $this->files[] = ['path' => $data,
+        $this->files[] = [
+            'path' => $data,
             'mimetype' => $mimetype,
             'filename' => $filename,
-            'encoding' => $encoding];
-
-        return true;
-    }
-
-    /**
-     * Return files which compose the message (should contain at least one file)
-     *
-     * @return array
-     */
-    public function getFiles()
-    {
-        return $this->files;
+            'encoding' => $encoding,
+        ];
     }
 
     /**
@@ -134,7 +122,7 @@ class Message extends AbstractBase
      *
      * @return string
      */
-    public function getUrl()
+    public function getUrl(): string
     {
         return $this->getPartnerTo()->send_url;
     }
@@ -144,17 +132,19 @@ class Message extends AbstractBase
      *
      * @return array
      */
-    public function getAuthentication()
+    public function getAuthentication(): array
     {
-        return ['method' => $this->getPartnerTo()->send_credencial_method,
+        return [
+            'method' => $this->getPartnerTo()->send_credencial_method,
             'login' => $this->getPartnerTo()->send_credencial_login,
-            'password' => $this->getPartnerTo()->send_credencial_password];
+            'password' => $this->getPartnerTo()->send_credencial_password,
+        ];
     }
 
     /**
      * Build message and encode it (signing and/or crypting)
      */
-    public function encode()
+    public function encode(): bool
     {
         if (!$this->getPartnerFrom() instanceof Partner || !$this->getPartnerTo() instanceof Partner) {
             throw new AS2Exception('Object not properly initialized');
@@ -197,8 +187,6 @@ class Message extends AbstractBase
             file_put_contents($file, $mime_part->toString());
         } catch (\Exception $e) {
             throw $e;
-
-            return false;
         }
 
         // signing file if wanted by Partner_To
@@ -211,8 +199,6 @@ class Message extends AbstractBase
                 $this->mic_checksum = $this->getMicChecksum();
             } catch (\Exception $e) {
                 throw $e;
-
-                return false;
             }
         }
 
@@ -223,8 +209,6 @@ class Message extends AbstractBase
                 $this->is_crypted = true;
             } catch (\Exception $e) {
                 throw $e;
-
-                return false;
             }
         }
 
@@ -279,10 +263,8 @@ class Message extends AbstractBase
 
     /**
      * Decode message extracting files from message
-     *
-     * @return array    List of files extracted
      */
-    public function decode()
+    public function decode(): bool
     {
         $this->files = $this->adapter->extract($this->getPath());
 
@@ -290,13 +272,9 @@ class Message extends AbstractBase
     }
 
     /**
-     * Generate a MDN from the message
-     *
-     * @param object $exception The exception if error handled
-     *
-     * @return object              The MDN generated
+     * Generate an MDN from the message
      */
-    public function generateMDN($exception = null)
+    public function generateMDN(?\Throwable $exception = null): MDN
     {
         $mdn = $this->mdnFactory->build($this);
 

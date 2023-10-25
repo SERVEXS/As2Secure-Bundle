@@ -2,6 +2,8 @@
 
 namespace TechData\AS2SecureBundle\Models;
 
+use Exception;
+use Mail_mimeDecode;
 use TechData\AS2SecureBundle\Models\Horde\MIME\Horde_MIME_Part;
 
 /**
@@ -45,10 +47,10 @@ class MDN extends AbstractBase
     public const MODIFIER_ERROR = 'error';
     public const MODIFIER_WARNING = 'warning';
     /**
-     * Human readable message
+     * Human-readable message
      */
-    protected $message = '';
-    protected $url = '';
+    protected string $message = '';
+    protected string $url = '';
     /**
      * Valid tokens :
      *
@@ -60,19 +62,19 @@ class MDN extends AbstractBase
      *    encoded-message-digest         : (base64 format + digest-alg-id = "sha1" | "md5")
      *    reporting-ua                   : user-agent
      */
-    protected $attributes;
+    protected ?Header $attributes = null;
 
     public function __construct()
     {
     }
 
-    public function initialize($data = null, $params = [])
+    public function initialize($data = null, $params = []): void
     {
         $this->attributes = new Header(['action-mode' => self::ACTION_AUTO,
             'sending-mode' => self::SENDING_AUTO]);
 
         // adapter
-        if (!($data instanceof AS2Exception) && $data instanceof \Exception) {
+        if (!($data instanceof AS2Exception) && $data instanceof Exception) {
             $data = new AS2Exception($data->getMessage(), 6);
         }
         // full automatic handling
@@ -84,12 +86,12 @@ class MDN extends AbstractBase
 
             try {
                 $this->setPartnerFrom($params['partner_from']);
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $this->partner_from = false;
             }
             try {
                 $this->setPartnerTo($params['partner_to']);
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $this->partner_to = false;
             }
         } elseif ($data instanceof Request) { // parse response
@@ -113,17 +115,17 @@ class MDN extends AbstractBase
         } elseif ($data instanceof Horde_MIME_Part) {
             try {
                 $this->setPartnerFrom($params['partner_from']);
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $this->partner_from = false;
             }
             try {
                 $this->setPartnerTo($params['partner_to']);
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $this->partner_to = false;
             }
 
             $this->path = Adapter::getTempFilename();
-            file_put_contents($this->path, $data->toString(true));
+            file_put_contents($this->path, $data->toString());
 
             $this->initializeBase(false, $params);
         } else {
@@ -137,47 +139,27 @@ class MDN extends AbstractBase
      * @param string $key Token
      * @param string $value Value
      */
-    public function setAttribute($key, $value)
+    public function setAttribute($key, $value): void
     {
         $this->attributes->addHeader($key, $value);
     }
 
-    /**
-     * Return the human readable message
-     *
-     * @return string
-     */
-    public function __toString()
+    public function __toString(): string
     {
         return $this->getMessage();
     }
 
-    /**
-     * Return the human readable message
-     *
-     * @return string
-     */
-    public function getMessage()
+    public function getMessage(): string
     {
         return $this->message;
     }
 
-    /**
-     * Set the human readable message
-     *
-     * @param string $message The message to set
-     */
-    public function setMessage($message)
+    public function setMessage(string $message): void
     {
         $this->message = $message;
     }
 
-    /**
-     * Return the computer readable message
-     *
-     * @return array
-     */
-    public function getAttributes()
+    public function getAttributes(): array
     {
         return $this->attributes->getHeaders();
     }
@@ -187,7 +169,7 @@ class MDN extends AbstractBase
      *
      * @param object $message The refering message
      */
-    public function encode($message = null)
+    public function encode($message = null): bool
     {
         // container
         $container = new Horde_MIME_Part('multipart/report', ' ');
@@ -256,7 +238,7 @@ class MDN extends AbstractBase
 
         // signing if requested
         if ($message && $message->getHeader('Disposition-Notification-Options')) {
-            file_put_contents($this->path, $container->toCanonicalString(true));
+            file_put_contents($this->path, $container->toCanonicalString());
             $this->path = $this->adapter->sign($this->path);
 
             $content = file_get_contents($this->path);
@@ -297,7 +279,7 @@ class MDN extends AbstractBase
             'input' => false,
             'crlf' => "\n",
         ];
-        $decoder = new \Mail_mimeDecode(file_get_contents($this->path));
+        $decoder = new Mail_mimeDecode(file_get_contents($this->path));
         $structure = $decoder->decode($params);
 
         // reset values before decoding (for security reasons)
@@ -306,7 +288,7 @@ class MDN extends AbstractBase
 
         // should contains 2 parts
         foreach ($structure->parts as $num => $part) {
-            if (strtolower($part->headers['content-type']) == 'message/disposition-notification') {
+            if (strtolower($part->headers['content-type']) === 'message/disposition-notification') {
                 // computer readable message
                 /*preg_match_all('/([^: ]+): (.+?(?:\r\n\s(?:.+?))*)\r\n/m', $part->body, $headers);
                 $headers = array_combine($headers[1], $headers[2]);

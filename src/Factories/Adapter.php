@@ -14,7 +14,7 @@ use TechData\AS2SecureBundle\Models\AS2Exception;
 
 class Adapter
 {
-    private Partner $partnerFactory;
+    private PartnerFactory $partnerFactory;
 
     private $AS2_DIR_BIN;
 
