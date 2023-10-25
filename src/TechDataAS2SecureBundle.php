@@ -2,9 +2,9 @@
 
 namespace TechData\AS2SecureBundle;
 
+use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\HttpKernel\Bundle\Bundle;
 use TechData\AS2SecureBundle\DependencyInjection\CompilerPass\PartnerProviderCompilerPass;
-use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 class TechDataAS2SecureBundle extends Bundle
 {
@@ -13,5 +13,10 @@ class TechDataAS2SecureBundle extends Bundle
         parent::build($container);
 
         $container->addCompilerPass(new PartnerProviderCompilerPass());
+    }
+
+    public function getPath(): string
+    {
+        return \dirname(__DIR__);
     }
 }
