@@ -22,10 +22,13 @@
     "ext-imap": "*",
     "ext-mbstring": "*",
     "ext-openssl": "*",
-    "php": ">=7.4",
-    "symfony/symfony": "^4.4.0 || ^5.4.0"
+    "php": ">=7.4"
   },
   "require-dev": {
+    "symfony/config": "^4.4||^5.4",
+    "symfony/dependency-injection": "^4.4||^5.4",
+    "symfony/http-kernel": "^4.4 || ^5.4 ",
+    "symfony/phpunit-bridge": "^4.4 || ^5.4",
     "rector/rector": "^0.18.5",
     "friendsofphp/php-cs-fixer": "^3.35.1"
   },
