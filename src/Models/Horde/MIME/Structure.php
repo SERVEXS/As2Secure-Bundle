@@ -2,8 +2,9 @@
 
 namespace TechData\AS2SecureBundle\Models\Horde\MIME;
 
-use TechData\AS2SecureBundle\Models\Horde\Horde_MIME;
-use TechData\AS2SecureBundle\Models\Horde\Horde_String;
+use TechData\AS2SecureBundle\Models\Horde\HordeString;
+use TechData\AS2SecureBundle\Models\Horde\MIME;
+use TechData\AS2SecureBundle\Models\Mail\MimeDecode;
 
 /**
  * $Horde: framework/MIME/MIME/Structure.php,v 1.87.10.31 2009/01/06 15:23:20 jan Exp $
@@ -24,7 +25,7 @@ use TechData\AS2SecureBundle\Models\Horde\Horde_String;
  * @author  Chuck Hagenbuch <chuck@horde.org>
  * @author  Michael Slusarz <slusarz@horde.org>
  */
-class Horde_MIME_Structure
+class Structure
 {
     /**
      * Given the results of imap_fetchstructure(), parse the structure
@@ -36,7 +37,7 @@ class Horde_MIME_Structure
      */
     public static function &parse($body)
     {
-        $msgOb = new Horde_MIME_Message();
+        $msgOb = new Message();
         $msgOb->addPart(self::_parse($body));
         $msgOb->buildMessage();
 
@@ -53,18 +54,18 @@ class Horde_MIME_Structure
      * @param \stdClass $body the result of imap_fetchstructure()
      * @param string $ref the current bodypart
      *
-     * @return Horde_MIME_Part  a MIME_Part object
+     * @return Part  a MIME_Part object
      */
     protected static function &_parse($body, $ref = 0)
     {
         static $message, $multipart;
 
         if (!isset($message)) {
-            $message = (new Horde_MIME())->type('message');
-            $multipart = (new Horde_MIME())->type('multipart');
+            $message = (new MIME())->type('message');
+            $multipart = (new MIME())->type('multipart');
         }
 
-        $mime_part = new Horde_MIME_Part();
+        $mime_part = new Part();
 
         /* Top multiparts don't get their own line. */
         if (empty($ref)
@@ -87,7 +88,7 @@ class Horde_MIME_Structure
         if (isset($body->parts)) {
             $sub_id = 1;
             reset($body->parts);
-            while ([, $sub_part] = each($body->parts)) {
+            foreach ($body->parts as $sub_part) {
                 /* Are we dealing with a multipart message? */
                 if (isset($body->type) && ($body->type == $message)
                     && isset($sub_part->type) && ($sub_part->type == $multipart)
@@ -118,7 +119,7 @@ class Horde_MIME_Structure
     protected static function _setInfo($part, &$ob, $ref)
     {
         /* Store Content-type information. */
-        $primary_type = (isset($part->type)) ? (new Horde_MIME())->type($part->type, MIME_STRING) : 'text';
+        $primary_type = (isset($part->type)) ? (new MIME())->type($part->type, MIME_STRING) : 'text';
         $sec_type = ($part->ifsubtype && $part->subtype) ? $part->subtype : 'x-unknown';
         $ob->setType($primary_type . '/' . $sec_type);
 
@@ -178,7 +179,7 @@ class Horde_MIME_Structure
 
         /* Set the description. */
         if (isset($part->description)) {
-            $ob->setDescription(preg_replace('/\s+/', ' ', $part->description));
+            $ob->setDescription(preg_replace('/\s+/', ' ', (string) $part->description));
         }
     }
 
@@ -202,12 +203,12 @@ class Horde_MIME_Structure
         if ($part->$pexists) {
             $attr_list = $rfc2231_list = [];
             foreach ($part->$ptype as $param) {
-                $param->value = str_replace(["\t", '\"'], [' ', '"'], $param->value);
+                $param->value = str_replace(["\t", '\"'], [' ', '"'], (string) $param->value);
                 /* Look for an asterisk in the attribute name.  If found we
                  * know we have RFC 2231 information. */
-                $pos = strpos($param->attribute, '*');
+                $pos = strpos((string) $param->attribute, '*');
                 if ($pos) {
-                    $attr = substr($param->attribute, 0, $pos);
+                    $attr = substr((string) $param->attribute, 0, $pos);
                     $rfc2231_list[$attr][] = $param->attribute . '=' . $param->value;
                 } else {
                     $attr_list[$param->attribute] = $param->value;
@@ -215,16 +216,16 @@ class Horde_MIME_Structure
             }
 
             foreach ($rfc2231_list as $val) {
-                $res = Horde_MIME::decodeRFC2231(implode(' ', $val));
+                $res = MIME::decodeRFC2231(implode(' ', $val));
                 if ($res) {
                     $attr_list[$res['attribute']] = $res['value'];
                 }
             }
 
             foreach ($attr_list as $attr => $val) {
-                $field = Horde_String::lower($attr);
+                $field = HordeString::lower($attr);
                 if ($field === 'type') {
-                    if ($type = (new Horde_MIME())->type($val)) {
+                    if ($type = (new MIME())->type($val)) {
                         $param_list['type'] = $type;
                     }
                 } else {
@@ -252,7 +253,7 @@ class Horde_MIME_Structure
         }
 
         reset($parts);
-        while ([$key] = each($parts)) {
+        foreach ($parts as $key => $part) {
             $ptr = &$parts[$key];
             $new_info = $info;
 
@@ -305,7 +306,7 @@ class Horde_MIME_Structure
             'decode_headers' => false,
         ];
 
-        $mimeDecode = new \Mail_mimeDecode($text);
+        $mimeDecode = new MimeDecode($text);
         if (!($structure = $mimeDecode->decode($decode_args))) {
             $message = false;
         } else {
@@ -330,11 +331,11 @@ class Horde_MIME_Structure
             $ob->ctype_primary = 'application';
             $ob->ctype_secondary = 'octet-stream';
         }
-        $ob->type = (int) (new Horde_MIME())->type($ob->ctype_primary);
+        $ob->type = (int) (new MIME())->type($ob->ctype_primary);
 
         /* Secondary content-type. */
         if (isset($ob->ctype_secondary)) {
-            $ob->subtype = Horde_String::upper($ob->ctype_secondary);
+            $ob->subtype = HordeString::upper($ob->ctype_secondary);
             $ob->ifsubtype = 1;
         } else {
             $ob->ifsubtype = 0;
@@ -342,7 +343,7 @@ class Horde_MIME_Structure
 
         /* Content transfer encoding. */
         if (isset($ob->headers['content-transfer-encoding'])) {
-            $ob->encoding = (new Horde_MIME())->encoding($ob->headers['content-transfer-encoding']);
+            $ob->encoding = (new MIME())->encoding($ob->headers['content-transfer-encoding']);
         }
 
         /* Content-type and Disposition parameters. */
@@ -368,9 +369,9 @@ class Horde_MIME_Structure
         if (isset($ob->headers['content-disposition'])) {
             $ob->ifdisposition = 1;
             $hdr = $ob->headers['content-disposition'];
-            $pos = strpos($hdr, ';');
+            $pos = strpos((string) $hdr, ';');
             if ($pos !== false) {
-                $hdr = substr($hdr, 0, $pos);
+                $hdr = substr((string) $hdr, 0, $pos);
             }
             $ob->disposition = $hdr;
         } else {
@@ -387,14 +388,14 @@ class Horde_MIME_Structure
 
         /* Get file size (if 'body' text is set). */
         if (isset($ob->body)) {
-            $ob->bytes = strlen($ob->body);
+            $ob->bytes = strlen((string) $ob->body);
         }
 
         /* Process parts also. */
         if (isset($ob->parts)) {
             reset($ob->parts);
-            while ([$key] = each($ob->parts)) {
-                self::_convertMimeDecodeData($ob->parts[$key]);
+            foreach ($ob->parts as $part) {
+                self::_convertMimeDecodeData($part);
             }
         }
     }
@@ -442,10 +443,10 @@ class Horde_MIME_Structure
         foreach ($toprocess as $val) {
             if ($decode) {
                 // Fields defined in RFC 2822 that contain address information
-                if (in_array(Horde_String::lower($val[0]), ['from', 'to', 'cc', 'bcc', 'reply-to', 'resent-to', 'resent-cc', 'resent-bcc', 'resent-from', 'sender'])) {
-                    $val[1] = Horde_MIME::decodeAddrString($val[1]);
+                if (in_array(HordeString::lower($val[0]), ['from', 'to', 'cc', 'bcc', 'reply-to', 'resent-to', 'resent-cc', 'resent-bcc', 'resent-from', 'sender'])) {
+                    $val[1] = MIME::decodeAddrString($val[1]);
                 } else {
-                    $val[1] = Horde_MIME::decode($val[1]);
+                    $val[1] = MIME::decode($val[1]);
                 }
             }
 

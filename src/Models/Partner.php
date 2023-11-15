@@ -28,55 +28,55 @@ namespace TechData\AS2SecureBundle\Models;
  *
  * @version 0.9.0
  */
-class Partner
+class Partner implements \Stringable
 {
     // general information
-    public const METHOD_NONE = 'NONE';
+    final public const METHOD_NONE = 'NONE';
 
-    public const METHOD_AUTO = CURLAUTH_ANY;
+    final public const METHOD_AUTO = CURLAUTH_ANY;
 
-    public const METHOD_BASIC = CURLAUTH_BASIC;
+    final public const METHOD_BASIC = CURLAUTH_BASIC;
 
-    public const METHOD_DIGECT = CURLAUTH_DIGEST;
+    final public const METHOD_DIGECT = CURLAUTH_DIGEST;
 
-    public const METHOD_NTLM = CURLAUTH_NTLM;
+    final public const METHOD_NTLM = CURLAUTH_NTLM;
 
     // security
-    public const METHOD_GSS = CURLAUTH_GSSNEGOTIATE; // must contain private/certificate/ca chain
+    final public const METHOD_GSS = CURLAUTH_GSSNEGOTIATE; // must contain private/certificate/ca chain
 
-    public const ENCODING_BASE64 = 'base64';
+    final public const ENCODING_BASE64 = 'base64';
 
-    public const ENCODING_BINARY = 'binary'; // must contain certificate/ca chain
+    final public const ENCODING_BINARY = 'binary'; // must contain certificate/ca chain
 
-    public const ACK_SYNC = 'SYNC';
+    final public const ACK_SYNC = 'SYNC';
 
-    public const ACK_ASYNC = 'ASYNC';
+    final public const ACK_ASYNC = 'ASYNC';
 
     // sending data
-    public const SIGN_NONE = 'none';
+    final public const SIGN_NONE = 'none';
 
-    public const SIGN_SHA1 = 'sha1'; // full url including "http://" or "https://"
+    final public const SIGN_SHA1 = 'sha1'; // full url including "http://" or "https://"
 
-    public const SIGN_MD5 = 'md5';
+    final public const SIGN_MD5 = 'md5';
 
-    public const CRYPT_NONE = 'none';
+    final public const CRYPT_NONE = 'none';
 
-    public const CRYPT_RC2_40 = 'rc2-40';
+    final public const CRYPT_RC2_40 = 'rc2-40';
 
-    public const CRYPT_RC2_64 = 'rc2-64';
+    final public const CRYPT_RC2_64 = 'rc2-64';
 
-    public const CRYPT_RC2_128 = 'rc2-128';
+    final public const CRYPT_RC2_128 = 'rc2-128';
 
-    public const CRYPT_DES = 'des';
+    final public const CRYPT_DES = 'des';
 
     // notification process
-    public const CRYPT_3DES = 'des3';
+    final public const CRYPT_3DES = 'des3';
 
-    public const CRYPT_AES_128 = 'aes128';
+    final public const CRYPT_AES_128 = 'aes128';
 
-    public const CRYPT_AES_192 = 'aes192';
+    final public const CRYPT_AES_192 = 'aes192';
 
-    public const CRYPT_AES_256 = 'aes256';
+    final public const CRYPT_AES_256 = 'aes256';
 
     protected static $stack = [];
 
@@ -209,7 +209,7 @@ class Partner
      * @param string $key Property name
      * @param mixed $value New value to set
      */
-    public function __set($key, $value)
+    public function __set($key, mixed $value)
     {
         $this->$key = $value;
     }
@@ -219,7 +219,7 @@ class Partner
         return property_exists($this, $key);
     }
 
-    public function __toString()
+    public function __toString(): string
     {
         return (string) $this->id;
     }

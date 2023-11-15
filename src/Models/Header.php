@@ -32,10 +32,9 @@ namespace TechData\AS2SecureBundle\Models;
  */
 
 use ArrayAccess;
-use Countable;
 use Iterator;
 
-class Header implements Countable, ArrayAccess, Iterator
+class Header implements \Countable, \ArrayAccess, \Iterator, \Stringable
 {
     protected array $headers = [];
 
@@ -145,7 +144,7 @@ class Header implements Countable, ArrayAccess, Iterator
         $key = strtolower($key);
         $tmp = array_change_key_case($this->headers);
         if (isset($tmp[$key])) {
-            return trim($tmp[$key], '"');
+            return trim((string) $tmp[$key], '"');
         }
 
         return false;
@@ -173,10 +172,8 @@ class Header implements Countable, ArrayAccess, Iterator
 
     /**
      * Magic method that returns headers serialized as in mime message
-     *
-     * @return string
      */
-    public function __toString()
+    public function __toString(): string
     {
         $ret = '';
 
@@ -243,7 +240,7 @@ class Header implements Countable, ArrayAccess, Iterator
      */
     protected function parseText(string $text): array
     {
-        if (strpos($text, "\n\n") !== false) {
+        if (str_contains($text, "\n\n")) {
             $text = substr($text, 0, strpos($text, "\n\n"));
         }
         $text = rtrim($text) . "\n";
@@ -252,7 +249,7 @@ class Header implements Countable, ArrayAccess, Iterator
         preg_match_all('/(.*?):\s*(.*?\n(\s.*?\n)*)/', $text, $matches);
         if ($matches) {
             foreach ($matches[2] as &$value) {
-                $value = trim(str_replace(["\r", "\n"], ' ', $value));
+                $value = trim(str_replace(["\r", "\n"], ' ', (string) $value));
             }
             unset($value);
             if (count($matches[1]) && count($matches[1]) === count($matches[2])) {

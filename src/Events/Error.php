@@ -11,5 +11,5 @@ use Symfony\Contracts\EventDispatcher\Event;
  */
 class Error extends Event
 {
-    public const EVENT = 'ERROR';
+    final public const EVENT = 'ERROR';
 }

@@ -8,16 +8,12 @@
 
 namespace TechData\AS2SecureBundle\Factories;
 
-use TechData\AS2SecureBundle\Factories\Request as RequestFactory;
 use TechData\AS2SecureBundle\Models\Client as ClientModel;
 
 class Client
 {
-    private Request $requestFactory;
-
-    public function __construct(RequestFactory $requestFactory)
+    public function __construct(private readonly Request $requestFactory)
     {
-        $this->requestFactory = $requestFactory;
     }
 
     public function build(): ClientModel

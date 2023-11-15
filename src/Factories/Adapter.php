@@ -14,14 +14,8 @@ use TechData\AS2SecureBundle\Models\AS2Exception;
 
 class Adapter
 {
-    private PartnerFactory $partnerFactory;
-
-    private $AS2_DIR_BIN;
-
-    public function __construct(PartnerFactory $partnerFactory, $AS2_DIR_BIN)
+    public function __construct(private readonly PartnerFactory $partnerFactory, private $AS2_DIR_BIN)
     {
-        $this->partnerFactory = $partnerFactory;
-        $this->AS2_DIR_BIN = $AS2_DIR_BIN;
     }
 
     /**

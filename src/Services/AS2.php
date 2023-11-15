@@ -25,38 +25,13 @@ use TechData\AS2SecureBundle\Models\Server;
 
 class AS2 implements MessageSender
 {
-    private EventDispatcherInterface $eventDispatcher;
-
-    private PartnerFactory $partnerFactory;
-
-    private Server $as2Server;
-
-    private RequestFactory $requestFactory;
-
-    private MessageFactory $messageFactory;
-
-    private AdapterFactory $adapterFactory;
-
-    private Client $client;
-
-    public function __construct(
-        EventDispatcherInterface $eventDispatcher,
-        Server $server,
-        RequestFactory $requestFactory,
-        PartnerFactory $partnerFactory,
-        MessageFactory $messageFactory,
-        AdapterFactory $adapterFactory,
-        Client $client
-    ) {
-        $this->eventDispatcher = $eventDispatcher;
-        $this->as2Server = $server;
-        $this->requestFactory = $requestFactory;
-        $this->partnerFactory = $partnerFactory;
-        $this->messageFactory = $messageFactory;
-        $this->adapterFactory = $adapterFactory;
-        $this->client = $client;
+    public function __construct(private readonly EventDispatcherInterface $eventDispatcher, private readonly Server $as2Server, private readonly RequestFactory $requestFactory, private readonly PartnerFactory $partnerFactory, private readonly MessageFactory $messageFactory, private readonly AdapterFactory $adapterFactory, private readonly Client $client)
+    {
     }
 
+    /**
+     * @throws AS2Exception
+     */
     public function handleRequest(Request $request)
     {
         // Convert the symfony request to a as2s request
@@ -82,7 +57,7 @@ class AS2 implements MessageSender
         try {
             // the AS2 payload may be further encoded, try to decode it.
             $response_object->decode();
-        } catch (Exception $e) {
+        } catch (\Exception) {
             // there was an exception while attemptiong to decode, so the message was probably not encoded... ignore the exception
         }
         $files = $response_object->getFiles();
@@ -114,7 +89,7 @@ class AS2 implements MessageSender
      *
      * @return array
      *
-     * @throws Exception
+     * @throws \Exception
      * @throws AS2Exception
      */
     public function sendMessage($toPartner, $fromPartner, $messageContent, $messageSubject = null, $filename = null)

@@ -35,25 +35,16 @@ use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use TechData\AS2SecureBundle\Events\Log;
 use TechData\AS2SecureBundle\Events\MdnReceived;
 use TechData\AS2SecureBundle\Factories\MDN as MdnFactory;
-use TechData\AS2SecureBundle\Models\Horde\MIME\Horde_MIME_Part;
+use TechData\AS2SecureBundle\Models\Horde\MIME\Part;
 
 class Server
 {
-    public const TYPE_MESSAGE = 'Message';
+    final public const TYPE_MESSAGE = 'Message';
 
-    public const TYPE_MDN = 'MDN';
+    final public const TYPE_MDN = 'MDN';
 
-    private EventDispatcherInterface $eventDispatcher;
-
-    private MdnFactory $mdnFactory;
-
-    private Client $client;
-
-    public function __construct(EventDispatcherInterface $eventDispatcher, MdnFactory $mdnFactory, Client $client)
+    public function __construct(private readonly EventDispatcherInterface $eventDispatcher, private readonly MdnFactory $mdnFactory, private readonly Client $client)
     {
-        $this->eventDispatcher = $eventDispatcher;
-        $this->mdnFactory = $mdnFactory;
-        $this->client = $client;
     }
 
     /**
@@ -62,6 +53,7 @@ class Server
      * @param request (If not set, get data from standard input)
      *
      * @return request    The request handled
+     *
      * @throws AS2Exception
      */
     public function handle(Request $request)
@@ -120,7 +112,7 @@ class Server
                 $mdn->encode();
             }
         } elseif ($object instanceof MDN) {
-            $payload = new Horde_MIME_Part(null, $object->getContent());
+            $payload = new Part(null, $object->getContent());
 
             $object_type = self::TYPE_MDN;
             $this->eventDispatcher->dispatch(new Log(Log::TYPE_INFO, 'Incoming transmission is a MDN.'));

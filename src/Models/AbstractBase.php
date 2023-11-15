@@ -40,7 +40,7 @@ abstract class AbstractBase
     protected Adapter $adapter;
 
     // Properties
-    protected ?string $filename;
+    protected ?string $filename = null;
 
     protected string $mimetype;
 
@@ -75,7 +75,7 @@ abstract class AbstractBase
         return '<' . uniqid('', true) . '@' . round(microtime(true)) . '_' . str_replace(
             ' ',
             '',
-            strtolower($id) . '_' . php_uname('n')
+            strtolower((string) $id) . '_' . php_uname('n')
         ) . '>';
     }
 
@@ -152,17 +152,17 @@ abstract class AbstractBase
         return $this->is_signed;
     }
 
-    public function encode(): bool
+    public function encode()
     {
         // TODO
     }
 
-    public function decode(): bool
+    public function decode()
     {
         // TODO
     }
 
-    public function getUrl(): string
+    public function getUrl()
     {
         // TODO
     }

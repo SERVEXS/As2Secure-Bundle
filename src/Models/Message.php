@@ -32,20 +32,16 @@ namespace TechData\AS2SecureBundle\Models;
  */
 
 use TechData\AS2SecureBundle\Factories\MDN as MDNFactory;
-use TechData\AS2SecureBundle\Models\Horde\MIME\Horde_MIME_Part;
+use TechData\AS2SecureBundle\Models\Horde\MIME\Part;
 
 class Message extends AbstractBase
 {
-    // Injected Services
-    private MDNFactory $mdnFactory;
-
     private $messageSubject;
 
     protected $mic_checksum = false;
 
-    public function __construct(MDNFactory $mdnFactory)
+    public function __construct(private readonly MDNFactory $mdnFactory)
     {
-        $this->mdnFactory = $mdnFactory;
     }
 
     public function initialize($data, $params = [])
@@ -58,7 +54,7 @@ class Message extends AbstractBase
 
         if ($data instanceof Request) {
             $this->path = $data->getPath();
-        } elseif ($data instanceof Horde_MIME_Part) {
+        } elseif ($data instanceof Part) {
             $this->path = Adapter::getTempFilename();
             file_put_contents($this->path, $data->toString());
         } elseif ($data) {
@@ -119,8 +115,6 @@ class Message extends AbstractBase
 
     /**
      * Return the url to send message
-     *
-     * @return string
      */
     public function getUrl(): string
     {
@@ -129,8 +123,6 @@ class Message extends AbstractBase
 
     /**
      * Return the authentication to use to send message to the partner
-     *
-     * @return array
      */
     public function getAuthentication(): array
     {
@@ -159,57 +151,45 @@ class Message extends AbstractBase
 
         // initial message creation : mime_part
         // TODO : use adapter to build multipart file
-        try {
-            // managing all files (parts)
-            $parts = [];
-            foreach ($files as $file) {
-                $mime_part = new Horde_MIME_Part($file['mimetype']);
-                $mime_part->setContents(file_get_contents($file['path']));
-                $mime_part->setName($file['filename']);
-                if ($file['encoding']) {
-                    $mime_part->setTransferEncoding($file['encoding']);
-                }
-
-                $parts[] = $mime_part;
-            }
-            if (count($parts) > 1) {
-                // handling multipart file
-                $mime_part = new Horde_MIME_Part('multipart/mixed');
-                foreach ($parts as $part) {
-                    $mime_part->addPart($part);
-                }
-            } else {
-                // handling mono part (body)
-                $mime_part = $parts[0];
+        // managing all files (parts)
+        $parts = [];
+        foreach ($files as $file) {
+            $mime_part = new Part($file['mimetype']);
+            $mime_part->setContents(file_get_contents($file['path']));
+            $mime_part->setName($file['filename']);
+            if ($file['encoding']) {
+                $mime_part->setTransferEncoding($file['encoding']);
             }
 
-            $file = Adapter::getTempFilename();
-            file_put_contents($file, $mime_part->toString());
-        } catch (\Exception $e) {
-            throw $e;
+            $parts[] = $mime_part;
         }
+        if (count($parts) > 1) {
+            // handling multipart file
+            $mime_part = new Part('multipart/mixed');
+            foreach ($parts as $part) {
+                $mime_part->addPart($part);
+            }
+        } else {
+            // handling mono part (body)
+            $mime_part = $parts[0];
+        }
+
+        $file = Adapter::getTempFilename();
+        file_put_contents($file, $mime_part->toString());
 
         // signing file if wanted by Partner_To
         if ($this->getPartnerTo()->sec_signature_algorithm != Partner::SIGN_NONE) {
-            try {
-                $file = $this->adapter->sign($file, $this->getPartnerTo()->send_compress, $this->getPartnerTo()->send_encoding);
-                $this->is_signed = true;
+            $file = $this->adapter->sign($file, $this->getPartnerTo()->send_compress, $this->getPartnerTo()->send_encoding);
+            $this->is_signed = true;
 
-                // echo file_get_contents($file);
-                $this->mic_checksum = $this->getMicChecksum();
-            } catch (\Exception $e) {
-                throw $e;
-            }
+            // echo file_get_contents($file);
+            $this->mic_checksum = $this->getMicChecksum();
         }
 
         // crypting file if wanted by Partner_To
         if ($this->getPartnerTo()->sec_encrypt_algorithm != Partner::CRYPT_NONE) {
-            try {
-                $file = $this->adapter->encrypt($file);
-                $this->is_crypted = true;
-            } catch (\Exception $e) {
-                throw $e;
-            }
+            $file = $this->adapter->encrypt($file);
+            $this->is_crypted = true;
         }
 
         $this->path = $file;
@@ -253,7 +233,7 @@ class Message extends AbstractBase
         // eg : content-type
         $content = file_get_contents($this->path);
         $this->headers->addHeadersFromMessage($content);
-        if (strpos($content, "\n\n") !== false) {
+        if (str_contains($content, "\n\n")) {
             $content = substr($content, strpos($content, "\n\n") + 2);
         }
         file_put_contents($this->path, $content);

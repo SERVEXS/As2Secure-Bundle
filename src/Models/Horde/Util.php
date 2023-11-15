@@ -13,7 +13,7 @@ define('HORDE_ERROR_DRIVER_CONFIG_MISSING', 1);
 define('HORDE_ERROR_DRIVER_CONFIG', 2);
 
 /**
- * The Horde_Util:: class provides generally useful methods of different kinds.
+ * The Util:: class provides generally useful methods of different kinds.
  *
  * $Horde: framework/Horde_Util/Horde_Util.php,v 1.384.6.37 2009/07/21 18:17:23 slusarz Exp $
  *
@@ -27,26 +27,27 @@ define('HORDE_ERROR_DRIVER_CONFIG', 2);
  *
  * @since   Horde 3.0
  */
-class Horde_Util
+class Util
 {
     /**
-     * @var array<string, bool>
+     * @var array<string, bool>|null
      */
-    protected static $files;
+    protected static ?array $files = null;
 
     /**
-     * @var array<string, bool>
+     * @var array<string, bool>|null
      */
-    protected static array $securedel;
+    protected static ?array $securedel = null;
 
     protected static array $cache = [];
 
     /**
+     * @template T of object
      * Returns an object's clone.
      *
-     * @param object &$obj The object to clone
+     * @param T &$obj The object to clone
      *
-     * @return object  the cloned object
+     * @return T  the cloned object
      */
     public function &cloneObject(&$obj)
     {
@@ -143,7 +144,7 @@ class Horde_Util
         if (is_null(self::$files)) {
             self::$files = [];
             self::$securedel = [];
-            register_shutdown_function(['Horde_Util', '_deleteAtShutdown']);
+            register_shutdown_function([self::class, '_deleteAtShutdown']);
         }
 
         if ($filename) {
@@ -180,7 +181,7 @@ class Horde_Util
             if ($val && file_exists($file)) {
                 /* Should we securely delete the file by overwriting the data
                    with a random string? */
-                if (isset(self::$secure[$file])) {
+                if (isset(self::$securedel[$file])) {
                     $filesize = filesize($file);
                     /* See http://www.cs.auckland.ac.nz/~pgut001/pubs/secure_del.html.
                      * We save the random overwrites for efficiency reasons. */

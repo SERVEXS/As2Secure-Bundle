@@ -12,27 +12,24 @@ use TechData\AS2SecureBundle\Models\Partner as PartnerModel;
  */
 class Partner
 {
-    private PartnerProvider $partnerProvider;
-
     /**
      * @var PartnerModel[]
      */
     private array $loadedPartners = [];
 
-    public function __construct(PartnerProvider $partnerProvider)
+    public function __construct(private readonly PartnerProvider $partnerProvider)
     {
-        $this->partnerProvider = $partnerProvider;
     }
 
     public function getPartner($partnerId, bool $reload = false): PartnerModel
     {
-        if ($reload || !array_key_exists(trim($partnerId), $this->loadedPartners)) {
+        if ($reload || !array_key_exists(trim((string) $partnerId), $this->loadedPartners)) {
             $partnerData = $this->partnerProvider->getPartner($partnerId);
             $as2partner = $this->makeNewPartner($partnerData);
-            $this->loadedPartners[trim($partnerId)] = $as2partner;
+            $this->loadedPartners[trim((string) $partnerId)] = $as2partner;
         }
 
-        return $this->loadedPartners[trim($partnerId)];
+        return $this->loadedPartners[trim((string) $partnerId)];
     }
 
     /**

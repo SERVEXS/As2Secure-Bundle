@@ -2,8 +2,6 @@
 
 namespace TechData\AS2SecureBundle\Models;
 
-use Exception;
-
 /**
  * AS2Secure - PHP Lib for AS2 message encoding / decoding
  *
@@ -30,15 +28,15 @@ use Exception;
  *
  * @version 0.9.0
  */
-class AS2Exception extends Exception
+class AS2Exception extends \Exception
 {
     /**
      * Refers to RFC 4130
      * http://rfclibrary.hosting.com/rfc/rfc4130/rfc4130-34.asp
      */
-    public const STATUS_ERROR = 'error';
-    public const STATUS_FAILURE = 'failure';
-    public const STATUS_WARNING = 'warning';
+    final public const STATUS_ERROR = 'error';
+    final public const STATUS_FAILURE = 'failure';
+    final public const STATUS_WARNING = 'warning';
 
     protected static array $level_error = [
         1 => 'authentication-failed',         // the receiver could not authenticate the sender
@@ -59,7 +57,7 @@ class AS2Exception extends Exception
         202 => 'sender-equals-receiver',      // the AS2-To name is identical to the AS2-From name
     ];
 
-    public const DEFAULT_ERROR = 6;
+    final public const DEFAULT_ERROR = 6;
 
     /* -------------------------------------------------- */
 

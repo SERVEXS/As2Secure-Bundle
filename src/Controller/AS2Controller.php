@@ -9,11 +9,8 @@ use TechData\AS2SecureBundle\Services\AS2;
 
 class AS2Controller
 {
-    private AS2 $as2Service;
-
-    public function __construct(AS2 $as2Service)
+    public function __construct(private readonly AS2 $as2Service)
     {
-        $this->as2Service = $as2Service;
     }
 
     public function inboundAction(Request $request)

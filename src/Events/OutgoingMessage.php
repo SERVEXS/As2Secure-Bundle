@@ -7,14 +7,8 @@ use TechData\AS2SecureBundle\Models\Message;
 
 class OutgoingMessage extends Event
 {
-    private Message $message;
-
-    private string $messageContents;
-
-    public function __construct(Message $message, string $messageContents)
+    public function __construct(private readonly Message $message, private readonly string $messageContents)
     {
-        $this->message = $message;
-        $this->messageContents = $messageContents;
     }
 
     public function getMessage(): Message

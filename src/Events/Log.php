@@ -6,20 +6,14 @@ use Symfony\Contracts\EventDispatcher\Event;
 
 class Log extends Event
 {
-    public const TYPE_INFO = 'info';
+    final public const TYPE_INFO = 'info';
 
-    public const TYPE_WARN = 'warning';
+    final public const TYPE_WARN = 'warning';
 
-    public const TYPE_ERROR = 'error';
+    final public const TYPE_ERROR = 'error';
 
-    private string $message;
-
-    private string $type;
-
-    public function __construct(string $type, string $message)
+    public function __construct(private readonly string $type, private readonly string $message)
     {
-        $this->type = $type;
-        $this->message = $message;
     }
 
     public function getMessage(): string

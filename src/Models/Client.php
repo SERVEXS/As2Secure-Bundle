@@ -35,15 +35,12 @@ use TechData\AS2SecureBundle\Factories\Request as RequestFactory;
 
 class Client
 {
-    private RequestFactory $requestFactory;
-
     protected array $responseHeaders = [];
     protected string $responseContent = '';
     protected int $responseIndice = 0;
 
-    public function __construct(RequestFactory $requestFactory)
+    public function __construct(private readonly RequestFactory $requestFactory)
     {
-        $this->requestFactory = $requestFactory;
     }
 
     /**
@@ -57,6 +54,7 @@ class Client
      *     response: MDN|Message|null,
      *     info: mixed
      * }
+     *
      * @throws AS2Exception
      */
     public function sendRequest($request): array
@@ -88,14 +86,14 @@ class Client
         curl_setopt($ch, CURLOPT_POST, 1);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $request->getContent());
         curl_setopt($ch, CURLOPT_USERAGENT, 'SupportPlaza AS2Secure HTTP Client');
-        curl_setopt($ch, CURLOPT_HEADERFUNCTION, [$this, 'handleResponseHeader']);
+        curl_setopt($ch, CURLOPT_HEADERFUNCTION, $this->handleResponseHeader(...));
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 
         // authentication setup
         $auth = $request->getAuthentication();
         if ($auth['method'] !== Partner::METHOD_NONE) {
             curl_setopt($ch, CURLOPT_HTTPAUTH, $auth['method']);
-            curl_setopt($ch, CURLOPT_USERPWD, urlencode($auth['login']) . ':' . urlencode($auth['password']));
+            curl_setopt($ch, CURLOPT_USERPWD, urlencode((string) $auth['login']) . ':' . urlencode((string) $auth['password']));
         }
 
         $response = curl_exec($ch);

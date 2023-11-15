@@ -32,29 +32,20 @@ namespace TechData\AS2SecureBundle\Models;
  */
 
 use Exception;
-use Mail_mimeDecode;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use TechData\AS2SecureBundle\Events\Log;
 use TechData\AS2SecureBundle\Factories\MDN as MDNFactory;
 use TechData\AS2SecureBundle\Factories\Message as MessageFactory;
-use TechData\AS2SecureBundle\Models\Horde\MIME\Horde_MIME_Structure;
+use TechData\AS2SecureBundle\Models\Horde\MIME\Structure;
+use TechData\AS2SecureBundle\Models\Mail\MimeDecode;
 
 class Request extends AbstractBase
 {
     // Injected Services
     protected $request;
 
-    private MDNFactory $mdnFactory;
-
-    private MessageFactory $messageFactory;
-
-    private EventDispatcherInterface $eventDispatcher;
-
-    public function __construct(MDNFactory $mdnFactory, MessageFactory $messageFactory, EventDispatcherInterface $eventDispatcher)
+    public function __construct(private readonly MDNFactory $mdnFactory, private readonly MessageFactory $messageFactory, private readonly EventDispatcherInterface $eventDispatcher)
     {
-        $this->mdnFactory = $mdnFactory;
-        $this->messageFactory = $messageFactory;
-        $this->eventDispatcher = $eventDispatcher;
     }
 
     public function initialize($content, $headers)
@@ -62,8 +53,8 @@ class Request extends AbstractBase
         // build params to match parent::__construct
         $this->headers = $headers;
         $mimetype = $this->getHeader('content-type');
-        if (($pos = strpos($mimetype, ';')) !== false) {
-            $mimetype = substr($mimetype, 0, $pos);
+        if (($pos = strpos((string) $mimetype, ';')) !== false) {
+            $mimetype = substr((string) $mimetype, 0, $pos);
         }
         $params = ['partner_from' => $this->getHeader('as2-from'),
             'partner_to' => $this->getHeader('as2-to'),
@@ -74,7 +65,7 @@ class Request extends AbstractBase
         $this->initializeBase($content, $params);
 
         $message_id = $this->getHeader('message-id');
-        $message_id = str_replace(['<', '>'], '', $message_id);
+        $message_id = str_replace(['<', '>'], '', (string) $message_id);
         $this->setMessageId($message_id);
     }
 
@@ -85,25 +76,21 @@ class Request extends AbstractBase
     public function decrypt()
     {
         $mimetype = $this->getHeader('content-type');
-        if (($pos = strpos($mimetype, ';')) !== false) {
-            $mimetype = trim(substr($mimetype, 0, $pos));
+        if (($pos = strpos((string) $mimetype, ';')) !== false) {
+            $mimetype = trim(substr((string) $mimetype, 0, $pos));
         }
 
         if ($mimetype === 'application/pkcs7-mime' || $mimetype === 'application/x-pkcs7-mime') {
-            try {
-                $content = $this->getHeaders() . "\n\n";
-                $content .= file_get_contents($this->getPath());
+            $content = $this->getHeaders() . "\n\n";
+            $content .= file_get_contents($this->getPath());
 
-                $input = Adapter::getTempFilename();
-                $mime_part = Horde_MIME_Structure::parseTextMIMEMessage($content);
-                file_put_contents($input, $mime_part->toString(true));
+            $input = Adapter::getTempFilename();
+            $mime_part = Structure::parseTextMIMEMessage($content);
+            file_put_contents($input, $mime_part->toString(true));
 
-                // get input file and returns decrypted file
-                // throw an exception on error
-                return $this->adapter->decrypt($input);
-            } catch (Exception $e) {
-                throw $e;
-            }
+            // get input file and returns decrypted file
+            // throw an exception on error
+            return $this->adapter->decrypt($input);
         }
 
         return false;
@@ -124,7 +111,7 @@ class Request extends AbstractBase
             'input' => false,
             // 'crlf'           => "\n"
         ];
-        $decoder = new Mail_mimeDecode(file_get_contents($input));
+        $decoder = new MimeDecode(file_get_contents($input));
         $structure = $decoder->decode($params);
         $mimetype = $structure->ctype_primary . '/' . $structure->ctype_secondary;
 
@@ -134,7 +121,7 @@ class Request extends AbstractBase
             try {
                 // rewrite message into base64 encoding
                 $content = file_get_contents($input);
-                $mime_part = Horde_MIME_Structure::parseTextMIMEMessage($content);
+                $mime_part = Structure::parseTextMIMEMessage($content);
                 $input = Adapter::getTempFilename();
                 file_put_contents($input, $mime_part->toString(true));
 
@@ -144,10 +131,10 @@ class Request extends AbstractBase
                 $crypted = true;
 
                 // reload extracted content to get mimetype
-                $decoder = new Mail_mimeDecode(file_get_contents($input));
+                $decoder = new MimeDecode(file_get_contents($input));
                 $structure = $decoder->decode($params);
                 $mimetype = $structure->ctype_primary . '/' . $structure->ctype_secondary;
-            } catch (Exception $e) {
+            } catch (\Exception $e) {
                 throw new AS2Exception($e->getMessage(), 3);
             }
         }
@@ -168,12 +155,12 @@ class Request extends AbstractBase
                 $this->eventDispatcher->dispatch(new Log(Log::TYPE_INFO, 'The sender used the algorithm "' . $structure->ctype_parameters['micalg'] . '" to sign the message.'));
 
                 // reload extracted content to get mimetype
-                $decoder = new Mail_mimeDecode(file_get_contents($input));
+                $decoder = new MimeDecode(file_get_contents($input));
                 $structure = $decoder->decode($params);
                 $mimetype = $structure->ctype_primary . '/' . $structure->ctype_secondary;
 
                 $this->eventDispatcher->dispatch(new Log(Log::TYPE_INFO, 'Using certificate "' . $this->getPartnerFrom() . '" to verify signature.'));
-            } catch (Exception $e) {
+            } catch (\Exception $e) {
                 throw new AS2Exception($e->getMessage(), 5);
             }
         } else {
@@ -214,7 +201,7 @@ class Request extends AbstractBase
         try {
             // build object with extracted content
             $message = file_get_contents($input);
-            $mime_part = Horde_MIME_Structure::parseTextMIMEMessage($message);
+            $mime_part = Structure::parseTextMIMEMessage($message);
 
             switch (strtolower($mimetype)) {
                 case 'multipart/report':
@@ -235,7 +222,7 @@ class Request extends AbstractBase
 
                     return $object;
             }
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             throw new AS2Exception($e->getMessage(), 6);
         }
     }
