@@ -749,7 +749,7 @@ class RFC822
         }
 
         // If $route is same as $route_addr then the colon was in
-        // quotes or brackets or, of course, non existent.
+        // quotes or brackets or, of course, non-existent.
         if ($route === $route_addr) {
             unset($route);
             $addr_spec = $route_addr;

@@ -160,7 +160,7 @@ class HordeString
 
             unset($php_errormsg);
             $output = @iconv($from, $to . '//TRANSLIT', $input . 'x');
-            $output = isset($php_errormsg) ? false : self::substr($output, 0, -1, $to);
+            $output = self::substr($output, 0, -1, $to);
 
             if (PHP_MAJOR_VERSION < 8) {
                 ini_set('track_errors', $oldTrackErrors);

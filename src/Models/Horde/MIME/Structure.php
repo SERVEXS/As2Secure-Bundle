@@ -258,7 +258,7 @@ class Structure
             $new_info = $info;
 
             if (isset($info['alt'])) {
-                $ptr->setInformation('alternative', (is_null($info['alt'])) ? '-' : $info['alt']);
+                $ptr->setInformation('alternative', empty($info['alt']) ? '-' : $info['alt']);
             }
             if (isset($info['related'])) {
                 $ptr->setInformation('related_part', $info['related']->getMIMEId());
