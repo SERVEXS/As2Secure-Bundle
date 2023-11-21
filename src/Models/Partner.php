@@ -78,71 +78,71 @@ class Partner implements \Stringable
 
     final public const CRYPT_AES_256 = 'aes256';
 
-    protected static $stack = [];
+    protected static array $stack = [];
 
-    protected $is_local = false;
+    protected bool $is_local = false;
 
-    protected $name = '';
+    protected string $name = '';
 
     // event trigger connector
-    protected $id = '';
+    protected string $id = '';
 
-    protected $email = '';
+    protected string $email = '';
 
     // security methods
-    protected $comment = '';
+    protected string $comment = '';
 
-    protected $sec_pkcs12 = '';
+    protected string $sec_pkcs12 = '';
 
-    protected $sec_pkcs12_password = '';
+    protected string $sec_pkcs12_password = '';
 
-    protected $sec_certificate = '';
+    protected string $sec_certificate = '';
 
-    protected $sec_signature_algorithm = self::SIGN_SHA1;
+    protected string $sec_signature_algorithm = self::SIGN_SHA1;
 
-    protected $sec_encrypt_algorithm = self::CRYPT_3DES;
+    protected string $sec_encrypt_algorithm = self::CRYPT_3DES;
 
     // transfert content encoding
-    protected $send_compress = false;
+    protected bool $send_compress = false;
 
-    protected $send_url = '';
+    protected string $send_url = '';
 
     // ack methods
-    protected $send_subject = 'AS2 Message Subject';
+    protected string $send_subject = 'AS2 Message Subject';
 
-    protected $send_content_type = 'application/EDI-Consent';
+    protected string $send_content_type = 'application/EDI-Consent';
 
-    protected $send_credencial_method = self::METHOD_NONE;
+    protected string $send_credencial_method = self::METHOD_NONE;
 
-    protected $send_credencial_login = '';
+    protected string $send_credencial_login = '';
 
-    protected $send_credencial_password = '';
+    protected string $send_credencial_password = '';
 
     // http://www.openssl.org/docs/apps/enc.html#SUPPORTED_CIPHERS
-    protected $send_encoding = self::ENCODING_BASE64;
+    protected string $send_encoding = self::ENCODING_BASE64;
 
-    protected $mdn_url = ''; // default
+    protected string $mdn_url = ''; // default
 
-    protected $mdn_subject = 'AS2 MDN Subject';
+    protected string $mdn_subject = 'AS2 MDN Subject';
 
-    protected $mdn_request = self::ACK_SYNC;
+    protected string $mdn_request = self::ACK_SYNC;
 
-    protected $mdn_signed = true;
+    protected bool $mdn_signed = true;
 
-    protected $mdn_credencial_method = self::METHOD_NONE;
+    protected string $mdn_credencial_method = self::METHOD_NONE;
 
-    protected $mdn_credencial_login = '';
+    protected string $mdn_credencial_login = '';
 
-    protected $mdn_credencial_password = '';
+    protected string $mdn_credencial_password = '';
 
-    protected $connector_class = 'AS2Connector';
+    protected string $connector_class = 'AS2Connector';
 
     /**
      * Restricted constructor
      *
      * @param array $data The data to set from
      */
-    public function __construct($data)
+    public function __construct(array $data)
     {
         // set properties with data
         foreach ($data as $key => $value) {
@@ -157,9 +157,9 @@ class Partner implements \Stringable
     /**
      * Return the list of available signatures
      *
-     * @return array
+     * @return array<string, string>
      */
-    public static function getAvailablesSignatures()
+    public static function getAvailablesSignatures(): array
     {
         return [
             'NONE' => self::SIGN_NONE,
@@ -170,9 +170,9 @@ class Partner implements \Stringable
     /**
      * Return the list of available cypher
      *
-     * @return array
+     * @return array<string, string>
      */
-    public static function getAvailablesEncryptions()
+    public static function getAvailablesEncryptions(): array
     {
         return [
             'NONE' => self::CRYPT_NONE,
@@ -194,7 +194,7 @@ class Partner implements \Stringable
      *
      * @return mixed Return a property of this class
      */
-    public function __get($key)
+    public function __get(string $key)
     {
         if (property_exists($this, $key)) {
             return $this->$key;
@@ -209,12 +209,12 @@ class Partner implements \Stringable
      * @param string $key Property name
      * @param mixed $value New value to set
      */
-    public function __set($key, mixed $value)
+    public function __set(string $key, mixed $value)
     {
         $this->$key = $value;
     }
 
-    public function __isset($key)
+    public function __isset(string $key)
     {
         return property_exists($this, $key);
     }
@@ -222,5 +222,140 @@ class Partner implements \Stringable
     public function __toString(): string
     {
         return (string) $this->id;
+    }
+
+    public static function getStack(): array
+    {
+        return self::$stack;
+    }
+
+    public function isIsLocal(): bool
+    {
+        return $this->is_local;
+    }
+
+    public function getName(): string
+    {
+        return $this->name;
+    }
+
+    public function getId(): string
+    {
+        return $this->id;
+    }
+
+    public function getEmail(): string
+    {
+        return $this->email;
+    }
+
+    public function getComment(): string
+    {
+        return $this->comment;
+    }
+
+    public function getSecPkcs12(): string
+    {
+        return $this->sec_pkcs12;
+    }
+
+    public function getSecPkcs12Password(): string
+    {
+        return $this->sec_pkcs12_password;
+    }
+
+    public function getSecCertificate(): string
+    {
+        return $this->sec_certificate;
+    }
+
+    public function getSecSignatureAlgorithm(): string
+    {
+        return $this->sec_signature_algorithm;
+    }
+
+    public function getSecEncryptAlgorithm(): string
+    {
+        return $this->sec_encrypt_algorithm;
+    }
+
+    public function isSendCompress(): bool
+    {
+        return $this->send_compress;
+    }
+
+    public function getSendUrl(): string
+    {
+        return $this->send_url;
+    }
+
+    public function getSendSubject(): string
+    {
+        return $this->send_subject;
+    }
+
+    public function getSendContentType(): string
+    {
+        return $this->send_content_type;
+    }
+
+    public function getSendCredencialMethod(): string
+    {
+        return $this->send_credencial_method;
+    }
+
+    public function getSendCredencialLogin(): string
+    {
+        return $this->send_credencial_login;
+    }
+
+    public function getSendCredencialPassword(): string
+    {
+        return $this->send_credencial_password;
+    }
+
+    public function getSendEncoding(): string
+    {
+        return $this->send_encoding;
+    }
+
+    public function getMdnUrl(): string
+    {
+        return $this->mdn_url;
+    }
+
+    public function getMdnSubject(): string
+    {
+        return $this->mdn_subject;
+    }
+
+    public function getMdnRequest(): string
+    {
+        return $this->mdn_request;
+    }
+
+    public function isMdnSigned(): bool
+    {
+        return $this->mdn_signed;
+    }
+
+    public function getMdnCredencialMethod(): string
+    {
+        return $this->mdn_credencial_method;
+    }
+
+    public function getMdnCredencialLogin(): string
+    {
+        return $this->mdn_credencial_login;
+    }
+
+    public function getMdnCredencialPassword(): string
+    {
+        return $this->mdn_credencial_password;
+    }
+
+    public function getConnectorClass(): string
+    {
+        return $this->connector_class;
     }
 }
