@@ -49,7 +49,7 @@ class Adapter
     /**
      * Array to store temporary files created and scheduled to unlink
      */
-    protected static array $tmp_files;
+    protected static ?array $tmp_files = null;
 
     protected ?Partner $partner_from = null;
 
