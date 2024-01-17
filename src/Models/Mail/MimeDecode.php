@@ -93,7 +93,7 @@ require_once 'PEAR.php';
  *
  * @see       http://pear.php.net/package/Mail_mime
  */
-class MimeDecode extends PEAR
+class MimeDecode extends \PEAR
 {
     /**
      * The raw email to decode
@@ -203,7 +203,7 @@ class MimeDecode extends PEAR
 
         // Called statically but no input
         } elseif ($isStatic) {
-            return PEAR::raiseError('Called statically and no input given');
+            return \PEAR::raiseError('Called statically and no input given');
 
         // Called via an object
         } else {

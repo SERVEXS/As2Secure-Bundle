@@ -207,7 +207,7 @@ class RFC822
         if ($this->address === false || isset($this->error)) {
             require_once 'PEAR.php';
 
-            return PEAR::raiseError($this->error);
+            return \PEAR::raiseError($this->error);
         }
 
         // Validate each address individually.  If we encounter an invalid
@@ -218,7 +218,7 @@ class RFC822
             if ($valid === false || isset($this->error)) {
                 require_once 'PEAR.php';
 
-                return PEAR::raiseError($this->error);
+                return \PEAR::raiseError($this->error);
             }
 
             if (!$this->nestGroups) {
