@@ -479,7 +479,7 @@ class RFC822
             // Don't include groups if we are not nesting
             // them. This avoids returning invalid addresses.
             if ($this->nestGroups) {
-                $structure = new stdClass();
+                $structure = new \stdClass();
                 $structure->groupname = $groupname;
             }
 

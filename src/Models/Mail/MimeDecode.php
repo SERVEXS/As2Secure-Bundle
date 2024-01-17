@@ -233,7 +233,7 @@ class MimeDecode extends \PEAR
      */
     public function _decode(string $headers, string $body, string $default_ctype = 'text/plain')
     {
-        $return = new stdClass();
+        $return = new \stdClass();
         $return->headers = [];
         $headers = $this->_parseHeaders($headers);
 
