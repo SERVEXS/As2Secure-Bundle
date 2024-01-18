@@ -111,6 +111,7 @@ class Part
 
     /**
      * The subparts of this part.
+     * @var mixed[]|Part[]
      */
     protected array $_parts = [];
 
@@ -949,7 +950,11 @@ class Part
             }
             reset($this->_parts);
 
-            foreach ($this->_parts as [, $part]) {
+            foreach ($this->_parts as $part) {
+                if (!$part instanceof self) {
+                    [,$part] = $part;
+                }
+
                 $text .= $eol . '--' . $boundary . $eol;
                 $oldEOL = $part->getEOL();
                 $part->setEOL($eol);
