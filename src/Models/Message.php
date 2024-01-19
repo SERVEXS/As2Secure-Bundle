@@ -78,7 +78,7 @@ class Message extends AbstractBase
      * @param bool $is_file If file
      * @param string $encoding The encoding to use for transfert
      */
-    public function addFile($data, string $mimetype = '', string $filename = '', bool $is_file = true, string $encoding = 'base64'): void
+    public function addFile($data, string $mimetype = '', ?string $filename = '', bool $is_file = true, string $encoding = 'base64'): void
     {
         if (!$is_file) {
             $file = Adapter::getTempFilename();
