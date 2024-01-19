@@ -31,7 +31,6 @@ namespace TechData\AS2SecureBundle\Models;
  *
  */
 
-use Exception;
 use TechData\AS2SecureBundle\Factories\Partner as PartnerFactory;
 
 class Adapter
@@ -127,7 +126,7 @@ class Adapter
      *
      * @throws \Exception
      */
-    public static function exec(string $command, bool $return_output = false): string
+    public static function exec(string $command, bool $return_output = false): array|int
     {
         $output = [];
         $return_var = 0;
@@ -139,10 +138,10 @@ class Adapter
         }
 
         if ($return_output) {
-            return implode(PHP_EOL, $output);
+            return $output;
         }
 
-        return (string) $return_var;
+        return $return_var;
     }
 
     /**
