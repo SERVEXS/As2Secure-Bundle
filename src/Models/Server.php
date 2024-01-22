@@ -67,6 +67,8 @@ class Server
             $object = $request->getObject();
         } catch (\Exception $e) {
             // get error while handling request
+            $this->eventDispatcher->dispatch(new Log(Log::TYPE_ERROR, sprintf('Error while handling request:' . $e->getMessage())));
+
             $error = $e;
             // throw $e;
         }
