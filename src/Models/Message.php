@@ -56,7 +56,7 @@ class Message extends AbstractBase
             $this->path = $data->getPath();
         } elseif ($data instanceof Part) {
             $this->path = Adapter::getTempFilename();
-            file_put_contents($this->path, $data->toString());
+            file_put_contents($this->path, $data->toString(true));
         } elseif ($data) {
             if (!isset($params['is_file']) || $params['is_file']) {
                 $this->addFile($data);
