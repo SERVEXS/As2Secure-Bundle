@@ -252,7 +252,8 @@ class MimeDecode extends \PEAR
         }
 
         foreach ($headers as $key => $value) {
-            $headers[$key]['name'] = $headerName;
+            $headers[$key]['name'] = strtolower((string) $value['name']);
+
             switch ($headers[$key]['name']) {
                 case 'content-type':
                     $content_type = $this->_parseHeaderValue($headers[$key]['value']);
