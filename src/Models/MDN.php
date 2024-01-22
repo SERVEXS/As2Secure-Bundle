@@ -266,6 +266,10 @@ class MDN extends AbstractBase implements \Stringable
      */
     public function getAttribute($key)
     {
+        if ($this->attributes === null) {
+            return '';
+        }
+
         return $this->attributes->getHeader($key);
     }
 

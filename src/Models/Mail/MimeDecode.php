@@ -238,19 +238,21 @@ class MimeDecode extends \PEAR
         $headers = $this->_parseHeaders($headers);
 
         foreach ($headers as $value) {
+            $headerName = strtolower((string) $value['name']);
+
             $value['value'] = $this->_decode_headers ? $this->_decodeHeader($value['value']) : $value['value'];
-            if (isset($return->headers[strtolower((string) $value['name'])]) && !is_array($return->headers[strtolower((string) $value['name'])])) {
-                $return->headers[strtolower((string) $value['name'])] = [$return->headers[strtolower((string) $value['name'])]];
-                $return->headers[strtolower((string) $value['name'])][] = $value['value'];
-            } elseif (isset($return->headers[strtolower((string) $value['name'])])) {
-                $return->headers[strtolower((string) $value['name'])][] = $value['value'];
+            if (isset($return->headers[$headerName]) && !is_array($return->headers[$headerName])) {
+                $return->headers[$headerName] = [$return->headers[$headerName]];
+                $return->headers[$headerName][] = $value['value'];
+            } elseif (isset($return->headers[$headerName])) {
+                $return->headers[$headerName][] = $value['value'];
             } else {
-                $return->headers[strtolower((string) $value['name'])] = $value['value'];
+                $return->headers[$headerName] = $value['value'];
             }
         }
 
         foreach ($headers as $key => $value) {
-            $headers[$key]['name'] = strtolower((string) $value['name']);
+            $headers[$key]['name'] = $headerName;
             switch ($headers[$key]['name']) {
                 case 'content-type':
                     $content_type = $this->_parseHeaderValue($headers[$key]['value']);

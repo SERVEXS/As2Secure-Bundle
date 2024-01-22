@@ -22,7 +22,8 @@
     "ext-imap": "*",
     "ext-mbstring": "*",
     "ext-openssl": "*",
-    "php": ">=8.2"
+    "php": ">=8.2",
+    "pear/pear": "^1.10"
   },
   "require-dev": {
     "symfony/config": "^5.4||^6.0",

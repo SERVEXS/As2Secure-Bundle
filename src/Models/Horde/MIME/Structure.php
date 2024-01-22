@@ -242,7 +242,7 @@ class Structure
      *
      * @since Horde 3.2
      *
-     * @param array &$parts The list of parts contained within the multipart
+     * @param array|Part[] &$parts The list of parts contained within the multipart
      *                       object
      * @param array $info information about the multipart structure
      */
@@ -253,39 +253,38 @@ class Structure
         }
 
         reset($parts);
-        foreach ($parts as $key => $part) {
-            $ptr = &$parts[$key];
+        foreach ($parts as $part) {
             $new_info = $info;
 
             if (isset($info['alt'])) {
-                $ptr->setInformation('alternative', empty($info['alt']) ? '-' : $info['alt']);
+                $part->setInformation('alternative', empty($info['alt']) ? '-' : $info['alt']);
             }
             if (isset($info['related'])) {
-                $ptr->setInformation('related_part', $info['related']->getMIMEId());
-                if ($id = $ptr->getContentID()) {
-                    $info['related']->addCID([$ptr->getMIMEId() => $id]);
+                $part->setInformation('related_part', $info['related']->getMIMEId());
+                if ($id = $part->getContentID()) {
+                    $info['related']->addCID([$part->getMIMEId() => $id]);
                 }
             }
             if (isset($info['rfc822'])) {
-                $ptr->setInformation('rfc822_part', $info['rfc822']);
+                $part->setInformation('rfc822_part', $info['rfc822']);
             }
 
-            switch ($ptr->getType()) {
+            switch ($part->getType()) {
                 case 'multipart/alternative':
-                    $new_info['alt'] = $ptr->getMIMEId();
+                    $new_info['alt'] = $part->getMIMEId();
                     break;
 
                 case 'multipart/related':
-                    $new_info['related'] = &$ptr;
+                    $new_info['related'] = &$part;
                     break;
 
                 case 'message/rfc822':
-                    $new_info['rfc822'] = $ptr->getMIMEId();
-                    $ptr->setInformation('header', true);
+                    $new_info['rfc822'] = $part->getMIMEId();
+                    $part->setInformation('header', true);
                     break;
             }
 
-            $parts = $ptr->getParts();
+            $parts = $part->getParts();
             self::addMultipartInfo($parts, $new_info);
         }
     }
