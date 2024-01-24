@@ -127,7 +127,7 @@ class MDN extends AbstractBase implements \Stringable
             }
 
             $this->path = Adapter::getTempFilename();
-            file_put_contents($this->path, $data->toString());
+            file_put_contents($this->path, $data->toString(true));
 
             $this->initializeBase(false, $params);
         } else {
