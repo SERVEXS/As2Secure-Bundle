@@ -971,7 +971,7 @@ class MimeDecode extends \PEAR
 
             $params = implode('', $params);
         } else {
-            $params = [];
+            $params = '';
         }
 
         return str_repeat($htab, $indent) . '<header>' . $crlf .
