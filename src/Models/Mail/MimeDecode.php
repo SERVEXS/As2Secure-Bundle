@@ -159,7 +159,7 @@ class MimeDecode extends \PEAR
      * Sets up the object, initialise the variables, and splits and
      * stores the header and body of the input.
      *
-     * @param string $input The input to decode
+     * @param string|null $input The input to decode
      */
     public function __construct($input)
     {
@@ -776,18 +776,18 @@ class MimeDecode extends \PEAR
             for ($i = 0; $i < $strlen; ++$i) {
                 $pos = 1;
                 $d = 0;
-                $len = (int) (((ord(substr($str[$i], 0, 1)) - 32) - 0) & 077);
+                $len = (int) (((ord(substr($str[$i], 0, 1)) - 32) - ' ') & 077);
 
                 while (($d + 3 <= $len) && ($pos + 4 <= strlen($str[$i]))) {
                     $c0 = (ord(substr($str[$i], $pos, 1)) ^ 0x20);
                     $c1 = (ord(substr($str[$i], $pos + 1, 1)) ^ 0x20);
                     $c2 = (ord(substr($str[$i], $pos + 2, 1)) ^ 0x20);
                     $c3 = (ord(substr($str[$i], $pos + 3, 1)) ^ 0x20);
-                    $file .= chr(((($c0 - 0) & 077) << 2) | ((($c1 - 0) & 077) >> 4));
+                    $file .= chr(((($c0 - ' ') & 077) << 2) | ((($c1 - ' ') & 077) >> 4));
 
-                    $file .= chr(((($c1 - 0) & 077) << 4) | ((($c2 - 0) & 077) >> 2));
+                    $file .= chr(((($c1 - ' ') & 077) << 4) | ((($c2 - ' ') & 077) >> 2));
 
-                    $file .= chr(((($c2 - 0) & 077) << 6) | (($c3 - 0) & 077));
+                    $file .= chr(((($c2 - ' ') & 077) << 6) | (($c3 - ' ') & 077));
 
                     $pos += 4;
                     $d += 3;
@@ -797,9 +797,9 @@ class MimeDecode extends \PEAR
                     $c0 = (ord(substr($str[$i], $pos, 1)) ^ 0x20);
                     $c1 = (ord(substr($str[$i], $pos + 1, 1)) ^ 0x20);
                     $c2 = (ord(substr($str[$i], $pos + 2, 1)) ^ 0x20);
-                    $file .= chr(((($c0 - 0) & 077) << 2) | ((($c1 - 0) & 077) >> 4));
+                    $file .= chr(((($c0 - ' ') & 077) << 2) | ((($c1 - ' ') & 077) >> 4));
 
-                    $file .= chr(((($c1 - 0) & 077) << 4) | ((($c2 - 0) & 077) >> 2));
+                    $file .= chr(((($c1 - ' ') & 077) << 4) | ((($c2 - ' ') & 077) >> 2));
 
                     $pos += 3;
                     $d += 2;
@@ -808,7 +808,7 @@ class MimeDecode extends \PEAR
                 if (($d + 1 <= $len) && ($pos + 2 <= strlen($str[$i]))) {
                     $c0 = (ord(substr($str[$i], $pos, 1)) ^ 0x20);
                     $c1 = (ord(substr($str[$i], $pos + 1, 1)) ^ 0x20);
-                    $file .= chr(((($c0 - 0) & 077) << 2) | ((($c1 - 0) & 077) >> 4));
+                    $file .= chr(((($c0 - ' ') & 077) << 2) | ((($c1 - ' ') & 077) >> 4));
                 }
             }
             $files[] = ['filename' => $filename, 'fileperm' => $fileperm, 'filedata' => $file];

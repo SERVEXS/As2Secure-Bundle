@@ -31,7 +31,6 @@ namespace TechData\AS2SecureBundle\Models;
  *
  */
 
-use Exception;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use TechData\AS2SecureBundle\Events\Log;
 use TechData\AS2SecureBundle\Factories\MDN as MDNFactory;
@@ -44,8 +43,11 @@ class Request extends AbstractBase
     // Injected Services
     protected $request;
 
-    public function __construct(private readonly MDNFactory $mdnFactory, private readonly MessageFactory $messageFactory, private readonly EventDispatcherInterface $eventDispatcher)
-    {
+    public function __construct(
+        private readonly MDNFactory $mdnFactory,
+        private readonly MessageFactory $messageFactory,
+        private readonly EventDispatcherInterface $eventDispatcher
+    ) {
     }
 
     public function initialize($content, $headers)
@@ -56,10 +58,12 @@ class Request extends AbstractBase
         if (($pos = strpos((string) $mimetype, ';')) !== false) {
             $mimetype = substr((string) $mimetype, 0, $pos);
         }
-        $params = ['partner_from' => $this->getHeader('as2-from'),
+        $params = [
+            'partner_from' => $this->getHeader('as2-from'),
             'partner_to' => $this->getHeader('as2-to'),
             'mimetype' => $mimetype,
-            'is_file' => false];
+            'is_file' => false,
+        ];
 
         // content is stored into new file
         $this->initializeBase($content, $params);
@@ -81,7 +85,7 @@ class Request extends AbstractBase
         }
 
         if ($mimetype === 'application/pkcs7-mime' || $mimetype === 'application/x-pkcs7-mime') {
-            $content = $this->getHeaders() . "\n\n";
+            $content = $this->getHeaders(true) . "\n\n";
             $content .= file_get_contents($this->getPath());
 
             $input = Adapter::getTempFilename();
@@ -99,13 +103,14 @@ class Request extends AbstractBase
     public function getObject()
     {
         // setup of full message
-        $content = $this->getHeaders() . "\n\n";
+        $content = $this->getHeaders(true) . "\n\n";
         $content .= file_get_contents($this->getPath());
         $input = Adapter::getTempFilename();
         file_put_contents($input, $content);
 
         // setup of mailmime decoder
-        $params = ['include_bodies' => false,
+        $params = [
+            'include_bodies' => false,
             'decode_headers' => true,
             'decode_bodies' => false,
             'input' => false,
@@ -127,7 +132,9 @@ class Request extends AbstractBase
 
                 $this->eventDispatcher->dispatch(new Log(Log::TYPE_INFO, 'AS2 message is encrypted.'));
                 $input = $this->adapter->decrypt($input);
-                $this->eventDispatcher->dispatch(new Log(Log::TYPE_INFO, 'The data has been decrypted using the key "' . $this->getPartnerTo() . '".'));
+                $this->eventDispatcher->dispatch(
+                    new Log(Log::TYPE_INFO, 'The data has been decrypted using the key "' . $this->getPartnerTo() . '".')
+                );
                 $crypted = true;
 
                 // reload extracted content to get mimetype
@@ -152,14 +159,21 @@ class Request extends AbstractBase
                 $input = $this->adapter->verify($input);
                 $signed = true;
 
-                $this->eventDispatcher->dispatch(new Log(Log::TYPE_INFO, 'The sender used the algorithm "' . $structure->ctype_parameters['micalg'] . '" to sign the message.'));
+                $this->eventDispatcher->dispatch(
+                    new Log(
+                        Log::TYPE_INFO,
+                        'The sender used the algorithm "' . $structure->ctype_parameters['micalg'] . '" to sign the message.'
+                    )
+                );
 
                 // reload extracted content to get mimetype
                 $decoder = new MimeDecode(file_get_contents($input));
                 $structure = $decoder->decode($params);
                 $mimetype = $structure->ctype_primary . '/' . $structure->ctype_secondary;
 
-                $this->eventDispatcher->dispatch(new Log(Log::TYPE_INFO, 'Using certificate "' . $this->getPartnerFrom() . '" to verify signature.'));
+                $this->eventDispatcher->dispatch(
+                    new Log(Log::TYPE_INFO, 'Using certificate "' . $this->getPartnerFrom() . '" to verify signature.')
+                );
             } catch (\Exception $e) {
                 throw new AS2Exception($e->getMessage(), 5);
             }
@@ -175,7 +189,8 @@ class Request extends AbstractBase
                 throw new AS2Exception('AS2 message is signed and shouldn\'t be.', 4);
             }
             else*/
-            if ($this->getPartnerFrom()->sec_signature_algorithm != Partner::SIGN_NONE && $this->getPartnerFrom()->mdn_signed && !$signed) {
+            if ($this->getPartnerFrom()->sec_signature_algorithm != Partner::SIGN_NONE && $this->getPartnerFrom(
+            )->mdn_signed && !$signed) {
                 throw new AS2Exception('AS2 message is not signed and should be.', 4);
             }
         } else {
@@ -205,18 +220,22 @@ class Request extends AbstractBase
 
             switch (strtolower($mimetype)) {
                 case 'multipart/report':
-                    $params = ['partner_from' => $this->getPartnerTo(),
+                    $params = [
+                        'partner_from' => $this->getPartnerTo(),
                         'partner_to' => $this->getPartnerFrom(),
                         'is_file' => false,
-                        'mic' => $mic];
+                        'mic' => $mic,
+                    ];
 
                     return $this->mdnFactory->build($mime_part, $params);
 
                 default:
-                    $params = ['partner_from' => $this->getPartnerFrom(),
+                    $params = [
+                        'partner_from' => $this->getPartnerFrom(),
                         'partner_to' => $this->getPartnerTo(),
                         'is_file' => false,
-                        'mic' => $mic];
+                        'mic' => $mic,
+                    ];
                     $object = $this->messageFactory->build($mime_part, $params);
                     $object->setHeaders($this->getHeaders());
 

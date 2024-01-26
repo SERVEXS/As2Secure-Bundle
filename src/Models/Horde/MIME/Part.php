@@ -1274,7 +1274,7 @@ class Part
             $bytes = $this->_bytes;
         } elseif ($this->getPrimaryType() === 'multipart') {
             reset($this->_parts);
-            foreach ($this->_parts as [, $part]) {
+            foreach ($this->_parts as $part) {
                 /* Skip multipart entries (since this may result in double
                    counting). */
                 if ($part->getPrimaryType() !== 'multipart') {

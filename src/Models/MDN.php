@@ -190,7 +190,7 @@ class MDN extends AbstractBase implements \Stringable
             $lines->addHeader('Final-Recipient', 'rfc822; "' . $this->getPartnerFrom()->id . '"');
         }
         $lines->addHeader('Original-Message-ID', $this->getAttribute('original-message-id'));
-        $lines->addHeader('Disposition', $this->getAttribute('action-mode') . 'MDN.php/' . $this->getAttribute('sending-mode') . '; ' . $this->getAttribute('disposition-type'));
+        $lines->addHeader('Disposition', $this->getAttribute('action-mode') . '/' . $this->getAttribute('sending-mode') . '; ' . $this->getAttribute('disposition-type'));
         if ($this->getAttribute('disposition-type') != self::TYPE_PROCESSED) {
             $lines->addHeader('Disposition', $lines->getHeader('Disposition') . ': ' . $this->getAttribute('disposition-modifier'));
         }

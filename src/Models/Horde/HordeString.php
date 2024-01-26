@@ -138,11 +138,11 @@ class HordeString
          * public functions use more memory. */
         if (strlen($input) < 16_777_216 || !(self::extensionExists('iconv') || self::extensionExists('mbstring'))) {
             if ($from_check && ($to === 'utf-8')) {
-                return mb_convert_encoding($input, 'UTF-8', 'ISO-8859-1');
+                return mb_convert_encoding($input, strtoupper($to), strtoupper($from));
             }
 
             if (($from === 'utf-8') && $to_check) {
-                return mb_convert_encoding($input, 'ISO-8859-1');
+                return mb_convert_encoding($input, strtoupper($to));
             }
         }
 
@@ -380,7 +380,7 @@ class HordeString
         }
         $charset = self::lower($charset);
         if (in_array($charset, ['utf-8', 'utf8'])) {
-            return strlen(mb_convert_encoding($string, 'ISO-8859-1'));
+            return strlen(mb_convert_encoding($string, 'UTF-8'));
         }
         if (self::extensionExists('mbstring')) {
             $old_error = error_reporting(0);
@@ -602,7 +602,7 @@ class HordeString
         $paragraphs = [];
 
         foreach (preg_split('/\r?\n/', $text) as $input) {
-            if ($quote && str_starts_with($input, '>')) {
+            if ($quote && !str_starts_with($input, '>')) {
                 $line = $input;
             } else {
                 /* We need to handle the Usenet-style signature line
