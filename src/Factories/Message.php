@@ -13,11 +13,8 @@ use TechData\AS2SecureBundle\Models\Message as MessageModel;
 
 class Message extends AbstractFactory
 {
-    private MDNFactory $mdnFactory;
-
-    public function __construct(MDNFactory $mdnFactory)
+    public function __construct(private readonly MDNFactory $mdnFactory)
     {
-        $this->mdnFactory = $mdnFactory;
     }
 
     /**

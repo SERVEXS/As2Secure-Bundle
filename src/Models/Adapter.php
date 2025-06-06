@@ -31,7 +31,6 @@ namespace TechData\AS2SecureBundle\Models;
  *
  */
 
-use Exception;
 use TechData\AS2SecureBundle\Factories\Partner as PartnerFactory;
 
 class Adapter
@@ -49,20 +48,14 @@ class Adapter
     /**
      * Array to store temporary files created and scheduled to unlink
      */
-    protected static array $tmp_files;
+    protected static ?array $tmp_files = null;
 
-    protected ?Partner $partner_from;
+    protected ?Partner $partner_from = null;
 
-    protected ?Partner $partner_to;
+    protected ?Partner $partner_to = null;
 
-    private PartnerFactory $partnerFactory;
-
-    private $AS2_DIR_BIN;
-
-    public function __construct(PartnerFactory $partnerFactory, $AS2_DIR_BIN)
+    public function __construct(private readonly PartnerFactory $partnerFactory, private $AS2_DIR_BIN)
     {
-        $this->partnerFactory = $partnerFactory;
-        $this->AS2_DIR_BIN = $AS2_DIR_BIN;
     }
 
     /**
@@ -119,7 +112,7 @@ class Adapter
             $dump = self::exec($command, true);
 
             return $dump[0];
-        } catch (\Exception $e) {
+        } catch (\Exception) {
             return false;
         }
     }
@@ -133,7 +126,7 @@ class Adapter
      *
      * @throws \Exception
      */
-    public static function exec(string $command, bool $return_output = false): string
+    public static function exec(string $command, bool $return_output = false): array|int
     {
         $output = [];
         $return_var = 0;
@@ -145,10 +138,10 @@ class Adapter
         }
 
         if ($return_output) {
-            return implode(PHP_EOL, $output);
+            return $output;
         }
 
-        return (string) $return_var;
+        return $return_var;
     }
 
     /**
@@ -204,7 +197,7 @@ class Adapter
     {
         if (is_null(self::$tmp_files)) {
             self::$tmp_files = [];
-            register_shutdown_function([__CLASS__, '_deleteTempFiles']);
+            register_shutdown_function([self::class, '_deleteTempFiles']);
         }
 
         $dir = sys_get_temp_dir();
@@ -342,17 +335,20 @@ class Adapter
         return 'OTHER';
     }
 
+    /**
+     * @throws AS2Exception
+     */
     public function initialize($partner_from, $partner_to)
     {
         try {
             $this->partner_from = $this->partnerFactory->getPartner($partner_from);
-        } catch (\Exception $e) {
+        } catch (\Exception) {
             throw new AS2Exception('Sender AS2 id "' . $partner_from . '" is unknown.');
         }
 
         try {
             $this->partner_to = $this->partnerFactory->getPartner($partner_to);
-        } catch (\Exception $e) {
+        } catch (\Exception) {
             throw new AS2Exception('Receiver AS2 id "' . $partner_to . '" is unknown.');
         }
     }
@@ -363,7 +359,6 @@ class Adapter
      * @return string              The file generated
      *
      * @throws \Exception
-     * @throws \Exception
      */
     public function compose($files)
     {
@@ -373,9 +368,9 @@ class Adapter
 
         $args = '';
         foreach ($files as $file) {
-            $args .= ' -file ' . escapeshellarg($file['path']) .
-                ' -mimetype ' . escapeshellarg($file['mimetype']) .
-                ' -name ' . escapeshellarg($file['filename']);
+            $args .= ' -file ' . escapeshellarg((string) $file['path']) .
+                ' -mimetype ' . escapeshellarg((string) $file['mimetype']) .
+                ' -name ' . escapeshellarg((string) $file['filename']);
         }
 
         $output = self::getTempFilename();
@@ -399,7 +394,6 @@ class Adapter
      * @return array                The list of extracted files (path / mimetype / filename)
      *
      * @throws AS2Exception
-     * @throws AS2Exception
      */
     public function extract($input)
     {
@@ -416,11 +410,11 @@ class Adapter
         $files = [];
 
         foreach ($results as $tmp) {
-            $tmp = explode(';', $tmp);
+            $tmp = explode(';', (string) $tmp);
             if (count($tmp) <= 1) {
                 continue;
             }
-            if (count($tmp) != 3) {
+            if (count($tmp) !== 3) {
                 throw new AS2Exception('Unexpected data structure while extracting message.');
             }
 
@@ -456,7 +450,6 @@ class Adapter
      *
      * @return string                The content compressed
      *
-     * @throws \Exception
      * @throws \Exception
      */
     public function compress($input)
@@ -518,7 +511,7 @@ class Adapter
         }
 
         $password = ($this->partner_from->sec_pkcs12_password ? ' -password ' . escapeshellarg(
-            $this->partner_from->sec_pkcs12_password
+            (string) $this->partner_from->sec_pkcs12_password
         ) : ' -nopassword');
 
         if ($use_zlib) {
@@ -532,7 +525,7 @@ class Adapter
         // execute main operation
         $command = self::$javapath . ' -jar ' . escapeshellarg($this->AS2_DIR_BIN . self::$ssl_adapter) .
             ' sign' .
-            ' -pkcs12 ' . escapeshellarg($this->partner_from->sec_pkcs12) .
+            ' -pkcs12 ' . escapeshellarg((string) $this->partner_from->sec_pkcs12) .
             $password .
             $compress .
             ' -encoding ' . escapeshellarg(strtolower($encoding)) .
@@ -557,12 +550,12 @@ class Adapter
     public function verify($input)
     {
         if ($this->partner_from->sec_pkcs12) {
-            $security = ' -pkcs12 ' . escapeshellarg($this->partner_from->sec_pkcs12) .
+            $security = ' -pkcs12 ' . escapeshellarg((string) $this->partner_from->sec_pkcs12) .
                 ($this->partner_from->sec_pkcs12_password ? ' -password ' . escapeshellarg(
-                    $this->partner_from->sec_pkcs12_password
+                    (string) $this->partner_from->sec_pkcs12_password
                 ) : ' -nopassword');
         } else {
-            $security = ' -cert ' . escapeshellarg($this->partner_from->sec_certificate);
+            $security = ' -cert ' . escapeshellarg((string) $this->partner_from->sec_certificate);
         }
 
         $output = self::getTempFilename();
@@ -611,7 +604,7 @@ class Adapter
             ' -encrypt' .
             ' -in ' . escapeshellarg($input) .
             ' -out ' . escapeshellarg($output) .
-            ' -des3 ' . escapeshellarg($certificate);
+            ' -des3 ' . escapeshellarg((string) $certificate);
         $result = static::exec($command);
 
         $headers = 'Content-Type: application/pkcs7-mime; smime-type="enveloped-data"; name="smime.p7m"' . "\n" .
@@ -675,28 +668,24 @@ class Adapter
      */
     public function decrypt($input)
     {
-        try {
-            $private_key = self::getPrivateFromPKCS12($this->partner_to->sec_pkcs12, $this->partner_to->sec_pkcs12_password);
-            if (!$private_key) {
-                throw new AS2Exception(
-                    'Unable to extract private key from PKCS12 file. (' . $this->partner_to->sec_pkcs12 . ' - using:' . $this->partner_to->sec_pkcs12_password . ')'
-                );
-            }
-
-            $output = self::getTempFilename();
-
-            $command = self::$ssl_openssl . ' cms ' .
-                ' -decrypt ' .
-                ' -in ' . escapeshellarg($input) .
-                ' -inkey ' . escapeshellarg($private_key) .
-                ' -out ' . escapeshellarg($output);
-
-            $result = static::exec($command);
-
-            return $output;
-        } catch (\Exception $e) {
-            throw $e;
+        $private_key = self::getPrivateFromPKCS12($this->partner_to->sec_pkcs12, $this->partner_to->sec_pkcs12_password);
+        if (!$private_key) {
+            throw new AS2Exception(
+                'Unable to extract private key from PKCS12 file. (' . $this->partner_to->sec_pkcs12 . ' - using:' . $this->partner_to->sec_pkcs12_password . ')'
+            );
         }
+
+        $output = self::getTempFilename();
+
+        $command = self::$ssl_openssl . ' cms ' .
+            ' -decrypt ' .
+            ' -in ' . escapeshellarg($input) .
+            ' -inkey ' . escapeshellarg($private_key) .
+            ' -out ' . escapeshellarg($output);
+
+        $result = static::exec($command);
+
+        return $output;
     }
 
     /**

@@ -32,10 +32,9 @@ namespace TechData\AS2SecureBundle\Models;
  */
 
 use ArrayAccess;
-use Countable;
 use Iterator;
 
-class Header implements Countable, ArrayAccess, Iterator
+class Header implements \Countable, \ArrayAccess, \Iterator, \Stringable
 {
     protected array $headers = [];
 
@@ -145,7 +144,7 @@ class Header implements Countable, ArrayAccess, Iterator
         $key = strtolower($key);
         $tmp = array_change_key_case($this->headers);
         if (isset($tmp[$key])) {
-            return trim($tmp[$key], '"');
+            return trim((string) $tmp[$key], '"');
         }
 
         return false;
@@ -173,10 +172,8 @@ class Header implements Countable, ArrayAccess, Iterator
 
     /**
      * Magic method that returns headers serialized as in mime message
-     *
-     * @return string
      */
-    public function __toString()
+    public function __toString(): string
     {
         $ret = '';
 
@@ -188,50 +185,50 @@ class Header implements Countable, ArrayAccess, Iterator
     }
 
     /** ArrayAccess interface **/
-    public function offsetExists($offset)
+    public function offsetExists($offset): bool
     {
         return array_key_exists($offset, $this->headers);
     }
 
-    public function offsetGet($offset)
+    public function offsetGet($offset): mixed
     {
         return $this->headers[$offset];
     }
 
-    public function offsetSet($offset, $value)
+    public function offsetSet($offset, $value): void
     {
         $this->headers[$offset] = $value;
     }
 
-    public function offsetUnset($offset)
+    public function offsetUnset($offset): void
     {
         unset($this->headers[$offset]);
     }
 
     /** Iterator interface **/
-    public function current()
+    public function current(): mixed
     {
         return $this->headers[$this->key()];
     }
 
-    public function key()
+    public function key(): mixed
     {
         $keys = array_keys($this->headers);
 
         return $keys[$this->_position];
     }
 
-    public function next()
+    public function next(): void
     {
         ++$this->_position;
     }
 
-    public function rewind()
+    public function rewind(): void
     {
         $this->_position = 0;
     }
 
-    public function valid()
+    public function valid(): bool
     {
         return $this->_position >= 0 && $this->_position < count($this->headers);
     }
@@ -243,7 +240,7 @@ class Header implements Countable, ArrayAccess, Iterator
      */
     protected function parseText(string $text): array
     {
-        if (strpos($text, "\n\n") !== false) {
+        if (str_contains($text, "\n\n")) {
             $text = substr($text, 0, strpos($text, "\n\n"));
         }
         $text = rtrim($text) . "\n";
@@ -252,7 +249,7 @@ class Header implements Countable, ArrayAccess, Iterator
         preg_match_all('/(.*?):\s*(.*?\n(\s.*?\n)*)/', $text, $matches);
         if ($matches) {
             foreach ($matches[2] as &$value) {
-                $value = trim(str_replace(["\r", "\n"], ' ', $value));
+                $value = trim(str_replace(["\r", "\n"], ' ', (string) $value));
             }
             unset($value);
             if (count($matches[1]) && count($matches[1]) === count($matches[2])) {

@@ -2,9 +2,8 @@
 
 namespace TechData\AS2SecureBundle\Models;
 
-use Exception;
-use Mail_mimeDecode;
-use TechData\AS2SecureBundle\Models\Horde\MIME\Horde_MIME_Part;
+use TechData\AS2SecureBundle\Models\Horde\MIME\Part;
+use TechData\AS2SecureBundle\Models\Mail\MimeDecode;
 
 /**
  * AS2Secure - PHP Lib for AS2 message encoding / decoding
@@ -32,20 +31,20 @@ use TechData\AS2SecureBundle\Models\Horde\MIME\Horde_MIME_Part;
  *
  * @version 0.9.0
  */
-class MDN extends AbstractBase
+class MDN extends AbstractBase implements \Stringable
 {
     /**
      * Refers to RFC 4130
      * http://rfclibrary.hosting.com/rfc/rfc4130/rfc4130-34.asp
      */
-    public const ACTION_AUTO = 'automatic-action';
-    public const ACTION_MANUAL = 'manual-action';
-    public const SENDING_AUTO = 'MDN-sent-automatically';
-    public const SENDING_MANUAL = 'MDN-sent-manually';
-    public const TYPE_PROCESSED = 'processed';
-    public const TYPE_FAILED = 'failed';
-    public const MODIFIER_ERROR = 'error';
-    public const MODIFIER_WARNING = 'warning';
+    final public const ACTION_AUTO = 'automatic-action';
+    final public const ACTION_MANUAL = 'manual-action';
+    final public const SENDING_AUTO = 'MDN-sent-automatically';
+    final public const SENDING_MANUAL = 'MDN-sent-manually';
+    final public const TYPE_PROCESSED = 'processed';
+    final public const TYPE_FAILED = 'failed';
+    final public const MODIFIER_ERROR = 'error';
+    final public const MODIFIER_WARNING = 'warning';
     /**
      * Human-readable message
      */
@@ -68,13 +67,16 @@ class MDN extends AbstractBase
     {
     }
 
+    /**
+     * @throws AS2Exception
+     */
     public function initialize($data = null, $params = []): void
     {
         $this->attributes = new Header(['action-mode' => self::ACTION_AUTO,
             'sending-mode' => self::SENDING_AUTO]);
 
         // adapter
-        if (!($data instanceof AS2Exception) && $data instanceof Exception) {
+        if (!($data instanceof AS2Exception) && $data instanceof \Exception) {
             $data = new AS2Exception($data->getMessage(), 6);
         }
         // full automatic handling
@@ -86,12 +88,12 @@ class MDN extends AbstractBase
 
             try {
                 $this->setPartnerFrom($params['partner_from']);
-            } catch (Exception $e) {
+            } catch (\Exception) {
                 $this->partner_from = false;
             }
             try {
                 $this->setPartnerTo($params['partner_to']);
-            } catch (Exception $e) {
+            } catch (\Exception) {
                 $this->partner_to = false;
             }
         } elseif ($data instanceof Request) { // parse response
@@ -112,20 +114,20 @@ class MDN extends AbstractBase
             $params['partner_to'] = $data->getPartnerFrom();
 
             $this->initializeBase(false, $params);
-        } elseif ($data instanceof Horde_MIME_Part) {
+        } elseif ($data instanceof Part) {
             try {
                 $this->setPartnerFrom($params['partner_from']);
-            } catch (Exception $e) {
+            } catch (\Exception) {
                 $this->partner_from = false;
             }
             try {
                 $this->setPartnerTo($params['partner_to']);
-            } catch (Exception $e) {
+            } catch (\Exception) {
                 $this->partner_to = false;
             }
 
             $this->path = Adapter::getTempFilename();
-            file_put_contents($this->path, $data->toString());
+            file_put_contents($this->path, $data->toString(true));
 
             $this->initializeBase(false, $params);
         } else {
@@ -167,16 +169,16 @@ class MDN extends AbstractBase
     /**
      * Encode and generate MDN from attributes and message (if exists)
      *
-     * @param object $message The refering message
+     * @param object|null $message The refering message
      */
-    public function encode($message = null): bool
+    public function encode(?object $message = null)
     {
         // container
-        $container = new Horde_MIME_Part('multipart/report', ' ');
+        $container = new Part('multipart/report', ' ');
         $container->setContentTypeParameter('report-type', 'disposition-notification');
 
         // first part
-        $text = new Horde_MIME_Part('text/plain', $this->getMessage(), MIME_DEFAULT_CHARSET, null, '7bit');
+        $text = new Part('text/plain', $this->getMessage(), MIME_DEFAULT_CHARSET, null, '7bit');
         // add human readable message
         $container->addPart($text);
 
@@ -188,7 +190,7 @@ class MDN extends AbstractBase
             $lines->addHeader('Final-Recipient', 'rfc822; "' . $this->getPartnerFrom()->id . '"');
         }
         $lines->addHeader('Original-Message-ID', $this->getAttribute('original-message-id'));
-        $lines->addHeader('Disposition', $this->getAttribute('action-mode') . 'MDN.php/' . $this->getAttribute('sending-mode') . '; ' . $this->getAttribute('disposition-type'));
+        $lines->addHeader('Disposition', $this->getAttribute('action-mode') . '/' . $this->getAttribute('sending-mode') . '; ' . $this->getAttribute('disposition-type'));
         if ($this->getAttribute('disposition-type') != self::TYPE_PROCESSED) {
             $lines->addHeader('Disposition', $lines->getHeader('Disposition') . ': ' . $this->getAttribute('disposition-modifier'));
         }
@@ -197,7 +199,7 @@ class MDN extends AbstractBase
         }
 
         // build computer readable message
-        $mdn = new Horde_MIME_Part('message/disposition-notification', $lines, MIME_DEFAULT_CHARSET, null, '7bit');
+        $mdn = new Part('message/disposition-notification', $lines, MIME_DEFAULT_CHARSET, null, '7bit');
         $container->addPart($mdn);
 
         $this->setMessageId(self::generateMessageID($this->getPartnerFrom()));
@@ -245,7 +247,7 @@ class MDN extends AbstractBase
             $this->headers->addHeadersFromMessage($content);
 
             // TODO : replace with futur AS2MimePart to separate content from header
-            if (strpos($content, "\n\n") !== false) {
+            if (str_contains($content, "\n\n")) {
                 $content = substr($content, strpos($content, "\n\n") + 2);
             }
             file_put_contents($this->path, ltrim($content));
@@ -264,6 +266,10 @@ class MDN extends AbstractBase
      */
     public function getAttribute($key)
     {
+        if ($this->attributes === null) {
+            return '';
+        }
+
         return $this->attributes->getHeader($key);
     }
 
@@ -279,7 +285,7 @@ class MDN extends AbstractBase
             'input' => false,
             'crlf' => "\n",
         ];
-        $decoder = new Mail_mimeDecode(file_get_contents($this->path));
+        $decoder = new MimeDecode(file_get_contents($this->path));
         $structure = $decoder->decode($params);
 
         // reset values before decoding (for security reasons)
@@ -288,7 +294,7 @@ class MDN extends AbstractBase
 
         // should contains 2 parts
         foreach ($structure->parts as $num => $part) {
-            if (strtolower($part->headers['content-type']) === 'message/disposition-notification') {
+            if (strtolower((string) $part->headers['content-type']) === 'message/disposition-notification') {
                 // computer readable message
                 /*preg_match_all('/([^: ]+): (.+?(?:\r\n\s(?:.+?))*)\r\n/m', $part->body, $headers);
                 $headers = array_combine($headers[1], $headers[2]);
@@ -299,7 +305,7 @@ class MDN extends AbstractBase
                 $this->attributes = $headers;
             } else {
                 // human readable message
-                $this->setMessage(trim($part->body));
+                $this->setMessage(trim((string) $part->body));
             }
         }
     }

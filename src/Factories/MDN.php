@@ -9,8 +9,9 @@
 namespace TechData\AS2SecureBundle\Factories;
 
 use TechData\AS2SecureBundle\Models\AS2Exception;
-use TechData\AS2SecureBundle\Models\Horde\MIME\Horde_MIME_Message;
-use TechData\AS2SecureBundle\Models\Horde\MIME\Horde_MIME_Part;
+use TechData\AS2SecureBundle\Models\Horde\MIME\Message;
+use TechData\AS2SecureBundle\Models\Horde\MIME\Part;
+use TechData\AS2SecureBundle\Models\Mail\MimeDecode;
 use TechData\AS2SecureBundle\Models\MDN as MDNModel;
 
 class MDN extends AbstractFactory
@@ -20,18 +21,18 @@ class MDN extends AbstractFactory
     }
 
     /**
-     * @param ?Horde_MIME_Message $data
+     * @param ?Message $data
      *
      * @throws AS2Exception
      */
     public function build($data = null, array $params = []): MDNModel
     {
         $originalMessageId = '';
-        if ($data instanceof Horde_MIME_Message) {
-            /* @var $part Horde_MIME_Part */
+        if ($data instanceof Message) {
+            /* @var $part Part */
             foreach ($data->getParts() as $part) {
                 if ($part->getType() === 'message/disposition-notification') {
-                    $headers = (new \Mail_mimeDecode($data->getParts()[2]->getContents()))->decode()->headers;
+                    $headers = (new MimeDecode($data->getParts()[2]->getContents()))->decode()->headers;
                     $originalMessageId = $headers['original-message-id'];
                 }
             }

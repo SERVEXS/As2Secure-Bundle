@@ -9,11 +9,8 @@ use TechData\AS2SecureBundle\Models\MDN;
 
 class MdnReceived extends Event
 {
-    private MDN $mdn;
-
-    public function __construct(MDN $mdn)
+    public function __construct(private readonly MDN $mdn)
     {
-        $this->mdn = $mdn;
     }
 
     public function getMdn(): MDN

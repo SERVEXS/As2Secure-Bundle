@@ -9,14 +9,8 @@ use TechData\AS2SecureBundle\Models\Message;
 
 class MessageSent extends Event
 {
-    private Message $message;
-
-    private array $headers;
-
-    public function __construct(Message $message, array $headers)
+    public function __construct(private readonly Message $message, private readonly array $headers)
     {
-        $this->headers = $headers;
-        $this->message = $message;
     }
 
     public function getMessage(): Message

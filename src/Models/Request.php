@@ -31,30 +31,23 @@ namespace TechData\AS2SecureBundle\Models;
  *
  */
 
-use Exception;
-use Mail_mimeDecode;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use TechData\AS2SecureBundle\Events\Log;
 use TechData\AS2SecureBundle\Factories\MDN as MDNFactory;
 use TechData\AS2SecureBundle\Factories\Message as MessageFactory;
-use TechData\AS2SecureBundle\Models\Horde\MIME\Horde_MIME_Structure;
+use TechData\AS2SecureBundle\Models\Horde\MIME\Structure;
+use TechData\AS2SecureBundle\Models\Mail\MimeDecode;
 
 class Request extends AbstractBase
 {
     // Injected Services
     protected $request;
 
-    private MDNFactory $mdnFactory;
-
-    private MessageFactory $messageFactory;
-
-    private EventDispatcherInterface $eventDispatcher;
-
-    public function __construct(MDNFactory $mdnFactory, MessageFactory $messageFactory, EventDispatcherInterface $eventDispatcher)
-    {
-        $this->mdnFactory = $mdnFactory;
-        $this->messageFactory = $messageFactory;
-        $this->eventDispatcher = $eventDispatcher;
+    public function __construct(
+        private readonly MDNFactory $mdnFactory,
+        private readonly MessageFactory $messageFactory,
+        private readonly EventDispatcherInterface $eventDispatcher
+    ) {
     }
 
     public function initialize($content, $headers)
@@ -62,19 +55,21 @@ class Request extends AbstractBase
         // build params to match parent::__construct
         $this->headers = $headers;
         $mimetype = $this->getHeader('content-type');
-        if (($pos = strpos($mimetype, ';')) !== false) {
-            $mimetype = substr($mimetype, 0, $pos);
+        if (($pos = strpos((string) $mimetype, ';')) !== false) {
+            $mimetype = substr((string) $mimetype, 0, $pos);
         }
-        $params = ['partner_from' => $this->getHeader('as2-from'),
+        $params = [
+            'partner_from' => $this->getHeader('as2-from'),
             'partner_to' => $this->getHeader('as2-to'),
             'mimetype' => $mimetype,
-            'is_file' => false];
+            'is_file' => false,
+        ];
 
         // content is stored into new file
         $this->initializeBase($content, $params);
 
         $message_id = $this->getHeader('message-id');
-        $message_id = str_replace(['<', '>'], '', $message_id);
+        $message_id = str_replace(['<', '>'], '', (string) $message_id);
         $this->setMessageId($message_id);
     }
 
@@ -85,25 +80,21 @@ class Request extends AbstractBase
     public function decrypt()
     {
         $mimetype = $this->getHeader('content-type');
-        if (($pos = strpos($mimetype, ';')) !== false) {
-            $mimetype = trim(substr($mimetype, 0, $pos));
+        if (($pos = strpos((string) $mimetype, ';')) !== false) {
+            $mimetype = trim(substr((string) $mimetype, 0, $pos));
         }
 
         if ($mimetype === 'application/pkcs7-mime' || $mimetype === 'application/x-pkcs7-mime') {
-            try {
-                $content = $this->getHeaders() . "\n\n";
-                $content .= file_get_contents($this->getPath());
+            $content = $this->getHeaders(true) . "\n\n";
+            $content .= file_get_contents($this->getPath());
 
-                $input = Adapter::getTempFilename();
-                $mime_part = Horde_MIME_Structure::parseTextMIMEMessage($content);
-                file_put_contents($input, $mime_part->toString(true));
+            $input = Adapter::getTempFilename();
+            $mime_part = Structure::parseTextMIMEMessage($content);
+            file_put_contents($input, $mime_part->toString(true));
 
-                // get input file and returns decrypted file
-                // throw an exception on error
-                return $this->adapter->decrypt($input);
-            } catch (Exception $e) {
-                throw $e;
-            }
+            // get input file and returns decrypted file
+            // throw an exception on error
+            return $this->adapter->decrypt($input);
         }
 
         return false;
@@ -112,19 +103,20 @@ class Request extends AbstractBase
     public function getObject()
     {
         // setup of full message
-        $content = $this->getHeaders() . "\n\n";
+        $content = $this->getHeaders(true) . "\n\n";
         $content .= file_get_contents($this->getPath());
         $input = Adapter::getTempFilename();
         file_put_contents($input, $content);
 
         // setup of mailmime decoder
-        $params = ['include_bodies' => false,
+        $params = [
+            'include_bodies' => false,
             'decode_headers' => true,
             'decode_bodies' => false,
             'input' => false,
             // 'crlf'           => "\n"
         ];
-        $decoder = new Mail_mimeDecode(file_get_contents($input));
+        $decoder = new MimeDecode(file_get_contents($input));
         $structure = $decoder->decode($params);
         $mimetype = $structure->ctype_primary . '/' . $structure->ctype_secondary;
 
@@ -134,20 +126,22 @@ class Request extends AbstractBase
             try {
                 // rewrite message into base64 encoding
                 $content = file_get_contents($input);
-                $mime_part = Horde_MIME_Structure::parseTextMIMEMessage($content);
+                $mime_part = Structure::parseTextMIMEMessage($content);
                 $input = Adapter::getTempFilename();
                 file_put_contents($input, $mime_part->toString(true));
 
                 $this->eventDispatcher->dispatch(new Log(Log::TYPE_INFO, 'AS2 message is encrypted.'));
                 $input = $this->adapter->decrypt($input);
-                $this->eventDispatcher->dispatch(new Log(Log::TYPE_INFO, 'The data has been decrypted using the key "' . $this->getPartnerTo() . '".'));
+                $this->eventDispatcher->dispatch(
+                    new Log(Log::TYPE_INFO, 'The data has been decrypted using the key "' . $this->getPartnerTo() . '".')
+                );
                 $crypted = true;
 
                 // reload extracted content to get mimetype
-                $decoder = new Mail_mimeDecode(file_get_contents($input));
+                $decoder = new MimeDecode(file_get_contents($input));
                 $structure = $decoder->decode($params);
                 $mimetype = $structure->ctype_primary . '/' . $structure->ctype_secondary;
-            } catch (Exception $e) {
+            } catch (\Exception $e) {
                 throw new AS2Exception($e->getMessage(), 3);
             }
         }
@@ -165,15 +159,22 @@ class Request extends AbstractBase
                 $input = $this->adapter->verify($input);
                 $signed = true;
 
-                $this->eventDispatcher->dispatch(new Log(Log::TYPE_INFO, 'The sender used the algorithm "' . $structure->ctype_parameters['micalg'] . '" to sign the message.'));
+                $this->eventDispatcher->dispatch(
+                    new Log(
+                        Log::TYPE_INFO,
+                        'The sender used the algorithm "' . $structure->ctype_parameters['micalg'] . '" to sign the message.'
+                    )
+                );
 
                 // reload extracted content to get mimetype
-                $decoder = new Mail_mimeDecode(file_get_contents($input));
+                $decoder = new MimeDecode(file_get_contents($input));
                 $structure = $decoder->decode($params);
                 $mimetype = $structure->ctype_primary . '/' . $structure->ctype_secondary;
 
-                $this->eventDispatcher->dispatch(new Log(Log::TYPE_INFO, 'Using certificate "' . $this->getPartnerFrom() . '" to verify signature.'));
-            } catch (Exception $e) {
+                $this->eventDispatcher->dispatch(
+                    new Log(Log::TYPE_INFO, 'Using certificate "' . $this->getPartnerFrom() . '" to verify signature.')
+                );
+            } catch (\Exception $e) {
                 throw new AS2Exception($e->getMessage(), 5);
             }
         } else {
@@ -188,7 +189,8 @@ class Request extends AbstractBase
                 throw new AS2Exception('AS2 message is signed and shouldn\'t be.', 4);
             }
             else*/
-            if ($this->getPartnerFrom()->sec_signature_algorithm != Partner::SIGN_NONE && $this->getPartnerFrom()->mdn_signed && !$signed) {
+            if ($this->getPartnerFrom()->sec_signature_algorithm != Partner::SIGN_NONE && $this->getPartnerFrom(
+            )->mdn_signed && !$signed) {
                 throw new AS2Exception('AS2 message is not signed and should be.', 4);
             }
         } else {
@@ -214,28 +216,32 @@ class Request extends AbstractBase
         try {
             // build object with extracted content
             $message = file_get_contents($input);
-            $mime_part = Horde_MIME_Structure::parseTextMIMEMessage($message);
+            $mime_part = Structure::parseTextMIMEMessage($message);
 
             switch (strtolower($mimetype)) {
                 case 'multipart/report':
-                    $params = ['partner_from' => $this->getPartnerTo(),
+                    $params = [
+                        'partner_from' => $this->getPartnerTo(),
                         'partner_to' => $this->getPartnerFrom(),
                         'is_file' => false,
-                        'mic' => $mic];
+                        'mic' => $mic,
+                    ];
 
                     return $this->mdnFactory->build($mime_part, $params);
 
                 default:
-                    $params = ['partner_from' => $this->getPartnerFrom(),
+                    $params = [
+                        'partner_from' => $this->getPartnerFrom(),
                         'partner_to' => $this->getPartnerTo(),
                         'is_file' => false,
-                        'mic' => $mic];
+                        'mic' => $mic,
+                    ];
                     $object = $this->messageFactory->build($mime_part, $params);
                     $object->setHeaders($this->getHeaders());
 
                     return $object;
             }
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             throw new AS2Exception($e->getMessage(), 6);
         }
     }
