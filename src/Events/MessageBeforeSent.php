@@ -10,7 +10,7 @@ class MessageBeforeSent extends Event
         private readonly string $content,
         private readonly string $messageId,
         private readonly string $sender,
-        private readonly string $receiver
+        private readonly string $receiver,
     ) {
     }
 

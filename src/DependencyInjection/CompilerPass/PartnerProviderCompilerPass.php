@@ -14,7 +14,7 @@ use Symfony\Component\DependencyInjection\Reference;
 
 class PartnerProviderCompilerPass implements CompilerPassInterface
 {
-    public function process(ContainerBuilder $container)
+    public function process(ContainerBuilder $container): void
     {
         // Get the reference for the service
         $reference = new Reference($container->getParameter('tech_data_as2_secure.partner_provider.service_id'));
